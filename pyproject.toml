@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eas-ledger-exporter"
+version = "0.1.0"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "openpyxl==3.1.5",
+    "rpaframework==32.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.4.2",
+    "pytest-cov==7.0.0",
+]
+
+[project.scripts]
+eas-ledger-exporter = "eas_ledger_exporter.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

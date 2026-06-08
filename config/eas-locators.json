@@ -1,0 +1,14 @@
+{
+  "window": {
+    "title_contains": "金蝶EAS",
+    "observed_title": "金蝶EAS Cloud-gdjl1001",
+    "verification": "verified from the running Win32 process; pending JAB visibility"
+  },
+  "verified_controls": {},
+  "pending_controls": [
+    "财务会计",
+    "条件查询",
+    "导出"
+  ],
+  "pending_reason": "The running EAS process has not loaded Java Access Bridge modules. Restart EAS after jabswitch -enable, then rerun scripts/inspect_eas.py and derive locators from artifacts/eas-controls.txt."
+}
