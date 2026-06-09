@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.py[cod]
+jab_wrapper.log
+artifacts/*
+!artifacts/eas-controls.txt

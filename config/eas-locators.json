@@ -2,13 +2,36 @@
   "window": {
     "title_contains": "金蝶EAS",
     "observed_title": "金蝶EAS Cloud-gdjl1001",
-    "verification": "verified from the running Win32 process; pending JAB visibility"
+    "locator": "pid selected from the unique Java window whose title contains 金蝶EAS",
+    "verification": "verified through JAB on 2026-06-09 against PID 141828"
   },
-  "verified_controls": {},
+  "verified_controls": {
+    "application_center_tab": {
+      "locator": "role:page tab and name:应用中心",
+      "verification": "one selected visible page tab"
+    },
+    "menu_search": {
+      "locator": "role:text and description:录入快捷码或菜单名称(支持拼音和首字母)",
+      "verification": "one visible editable single-line text control"
+    },
+    "financial_accounting_probe": {
+      "locator": "role:text and description:录入快捷码或菜单名称(支持拼音和首字母)",
+      "expected_text": "财务会计",
+      "verification": "captured from the search control AccessibleText sentence"
+    },
+    "system_menu": {
+      "locator": "role:menu and name:系统(S)",
+      "verification": "one visible menu"
+    },
+    "page_setup_button": {
+      "locator": "role:push button and name:页面设置",
+      "verification": "one control in the current tree"
+    }
+  },
   "pending_controls": [
-    "财务会计",
+    "财务会计分类节点",
     "条件查询",
     "导出"
   ],
-  "pending_reason": "The running EAS process has not loaded Java Access Bridge modules. Restart EAS after jabswitch -enable, then rerun scripts/inspect_eas.py and derive locators from artifacts/eas-controls.txt."
+  "pending_reason": "The application-category list uses managesDescendents and exposes blank names for its rendered labels. The current menu search exposes 财务会计 through AccessibleText but returns 无搜索结果, so this does not verify a 财务会计 category locator. 条件查询 and 导出 are not visible in the current tree."
 }

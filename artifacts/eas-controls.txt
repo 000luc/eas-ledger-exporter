@@ -1,0 +1,148 @@
+role:frame; name:金蝶EAS Cloud-gdjl1001; virtual_accessible_name:金蝶EAS Cloud-gdjl1001; description:; text:; states:已启用,可集中,可见,正在显示,活动,大小可调; indexInParent:-1; childrenCount:1; x:-8; y:-8; width:1358; height:916
+| role:root pane; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,正在显示; indexInParent:0; childrenCount:2; x:0; y:23; width:1342; height:877
+| | role:panel; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中; indexInParent:0; childrenCount:1; x:-1; y:-1; width:-1; height:-1
+| | | role:panel; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见; indexInParent:0; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | role:layered pane; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,正在显示; indexInParent:1; childrenCount:8; x:0; y:23; width:1342; height:877
+| | | role:panel; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,正在显示; indexInParent:0; childrenCount:1; x:944; y:46; width:250; height:37
+| | | | role:popup menu; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,正在显示; indexInParent:0; childrenCount:1; x:944; y:46; width:250; height:37
+| | | | | role:scroll pane; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,正在显示,不透明; indexInParent:0; childrenCount:3; x:945; y:47; width:248; height:35
+| | | | | | role:viewport; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,正在显示,不透明; indexInParent:0; childrenCount:1; x:947; y:49; width:244; height:31
+| | | | | | | role:list; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,正在显示,不透明,多选择,managesDescendents; indexInParent:0; childrenCount:1; x:947; y:49; width:244; height:31
+| | | | | | | | role:label; name:无搜索结果; virtual_accessible_name:无搜索结果; description:; text:; states:已启用,可集中,可见,不透明,可选择,正在显示,瞬时; indexInParent:0; childrenCount:0; x:947; y:49; width:244; height:31
+| | | | | | role:scroll bar; name:; virtual_accessible_name:; description:; text:; states:已启用,不透明,垂直; indexInParent:1; childrenCount:2; x:-1; y:-1; width:-1; height:-1
+| | | | | | | role:push button; name:; virtual_accessible_name:; description:; text:; states:已启用,可见; indexInParent:0; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | | role:push button; name:; virtual_accessible_name:; description:; text:; states:已启用,可见; indexInParent:1; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | role:scroll bar; name:; virtual_accessible_name:; description:; text:; states:已启用,不透明,水平; indexInParent:2; childrenCount:2; x:-1; y:-1; width:-1; height:-1
+| | | | | | | role:push button; name:; virtual_accessible_name:; description:; text:; states:已启用,可见; indexInParent:0; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | | role:push button; name:; virtual_accessible_name:; description:; text:; states:已启用,可见; indexInParent:1; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | role:panel; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,正在显示,不透明; indexInParent:1; childrenCount:2; x:1333; y:789; width:80; height:40
+| | | | role:label; name:; virtual_accessible_name:jar:file:D:\Kingdee\eas\client\lib\client\bos\bs_uiframe-client.jar!/com/kingdee/eas/base/uiframe/client/conf/CombineLeft1x.png; description:; text:; states:已启用,可集中,可见,正在显示,不透明; indexInParent:0; childrenCount:0; x:1333; y:789; width:10; height:40
+| | | | role:label; name:; virtual_accessible_name:jar:file:D:\Kingdee\eas\client\lib\client\bos\bs_uiframe-client.jar!/com/kingdee/eas/base/uiframe/client/conf/lianxi.png; description:; text:; states:已启用,可集中; indexInParent:1; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | role:panel; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,不透明; indexInParent:2; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | role:panel; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,正在显示,不透明; indexInParent:3; childrenCount:1; x:0; y:77; width:1342; height:802
+| | | | role:panel; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,正在显示,不透明; indexInParent:0; childrenCount:1; x:0; y:77; width:1342; height:802
+| | | | | role:panel; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,正在显示,不透明; indexInParent:0; childrenCount:1; x:0; y:77; width:1342; height:802
+| | | | | | role:page tab list; name:应用中心; virtual_accessible_name:应用中心; description:; text:; states:已启用,可集中,可见,正在显示,不透明; indexInParent:0; childrenCount:3; x:0; y:77; width:1342; height:802
+| | | | | | | role:page tab; name:应用中心; virtual_accessible_name:应用中心; description:; text:; states:已启用,可集中,可见,正在显示,不透明,可选择,已选定; indexInParent:0; childrenCount:1; x:6; y:77; width:100; height:35
+| | | | | | | | role:panel; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,正在显示,不透明; indexInParent:5; childrenCount:1; x:0; y:112; width:1342; height:767
+| | | | | | | | | role:split pane; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,正在显示,水平; indexInParent:0; childrenCount:2; x:2; y:114; width:1329; height:753
+| | | | | | | | | | role:scroll pane; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,正在显示,不透明; indexInParent:0; childrenCount:3; x:3; y:115; width:249; height:751
+| | | | | | | | | | | role:viewport; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,正在显示,不透明; indexInParent:0; childrenCount:1; x:3; y:125; width:249; height:734
+| | | | | | | | | | | | role:panel; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,正在显示,不透明; indexInParent:0; childrenCount:3; x:3; y:125; width:249; height:734
+| | | | | | | | | | | | | role:list; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,正在显示,不透明,managesDescendents; indexInParent:0; childrenCount:13; x:3; y:126; width:249; height:403
+| | | | | | | | | | | | | | role:label; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,不透明,可选择,正在显示,瞬时; indexInParent:0; childrenCount:0; x:3; y:126; width:249; height:31
+| | | | | | | | | | | | | | role:label; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,不透明,可选择,正在显示,瞬时; indexInParent:1; childrenCount:0; x:3; y:157; width:249; height:31
+| | | | | | | | | | | | | | role:label; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,不透明,可选择,正在显示,瞬时; indexInParent:2; childrenCount:0; x:3; y:188; width:249; height:31
+| | | | | | | | | | | | | | role:label; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,不透明,可选择,正在显示,瞬时; indexInParent:3; childrenCount:0; x:3; y:219; width:249; height:31
+| | | | | | | | | | | | | | role:label; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,不透明,可选择,正在显示,瞬时; indexInParent:4; childrenCount:0; x:3; y:250; width:249; height:31
+| | | | | | | | | | | | | | role:label; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,不透明,可选择,正在显示,瞬时; indexInParent:5; childrenCount:0; x:3; y:281; width:249; height:31
+| | | | | | | | | | | | | | role:label; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,不透明,可选择,正在显示,瞬时; indexInParent:6; childrenCount:0; x:3; y:312; width:249; height:31
+| | | | | | | | | | | | | | role:label; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,不透明,可选择,正在显示,瞬时; indexInParent:7; childrenCount:0; x:3; y:343; width:249; height:31
+| | | | | | | | | | | | | | role:label; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,不透明,可选择,正在显示,瞬时; indexInParent:8; childrenCount:0; x:3; y:374; width:249; height:31
+| | | | | | | | | | | | | | role:label; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,不透明,可选择,正在显示,瞬时; indexInParent:9; childrenCount:0; x:3; y:405; width:249; height:31
+| | | | | | | | | | | | | | role:label; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,不透明,可选择,正在显示,瞬时; indexInParent:10; childrenCount:0; x:3; y:436; width:249; height:31
+| | | | | | | | | | | | | | role:label; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,不透明,可选择,正在显示,瞬时; indexInParent:11; childrenCount:0; x:3; y:467; width:249; height:31
+| | | | | | | | | | | | | | role:label; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,不透明,可选择,正在显示,瞬时; indexInParent:12; childrenCount:0; x:3; y:498; width:249; height:31
+| | | | | | | | | | | | | role:panel; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,不透明; indexInParent:1; childrenCount:1; x:-1; y:-1; width:-1; height:-1
+| | | | | | | | | | | | | | role:layered pane; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,不透明; indexInParent:0; childrenCount:3; x:-1; y:-1; width:-1; height:-1
+| | | | | | | | | | | | | | | role:label; name:; virtual_accessible_name:jar:file:D:\Kingdee\eas\client\lib\client\bos\bos_resource_common_ico.jar!/resources/common/ico/system/image_subpane_upArrow.png; description:; text:; states:已启用,可集中,不透明; indexInParent:0; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | | | | | | | | | | role:label; name:; virtual_accessible_name:jar:file:D:\Kingdee\eas\client\lib\client\bos\bos_resource_common_ico.jar!/resources/common/ico/system/image_subpane_downArrow.png; description:; text:; states:已启用,可集中,不透明; indexInParent:1; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | | | | | | | | | | role:scroll pane; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,不透明; indexInParent:2; childrenCount:3; x:-1; y:-1; width:-1; height:-1
+| | | | | | | | | | | | | | | | role:viewport; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,不透明; indexInParent:0; childrenCount:1; x:-1; y:-1; width:-1; height:-1
+| | | | | | | | | | | | | | | | | role:list; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,managesDescendents; indexInParent:0; childrenCount:6; x:-1; y:-1; width:-1; height:-1
+| | | | | | | | | | | | | | | | | | role:label; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,不透明,可选择,已选定,瞬时; indexInParent:0; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | | | | | | | | | | | | | role:label; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,不透明,可选择,瞬时; indexInParent:1; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | | | | | | | | | | | | | role:label; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,不透明,可选择,瞬时; indexInParent:2; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | | | | | | | | | | | | | role:label; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,不透明,可选择,瞬时; indexInParent:3; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | | | | | | | | | | | | | role:label; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,不透明,可选择,瞬时; indexInParent:4; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | | | | | | | | | | | | | role:label; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,不透明,可选择,瞬时; indexInParent:5; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | | | | | | | | | | | role:scroll bar; name:; virtual_accessible_name:; description:; text:; states:已启用,不透明,垂直; indexInParent:1; childrenCount:2; x:-1; y:-1; width:-1; height:-1
+| | | | | | | | | | | | | | | | | role:push button; name:; virtual_accessible_name:; description:; text:; states:已启用,可见; indexInParent:0; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | | | | | | | | | | | | role:push button; name:; virtual_accessible_name:; description:; text:; states:已启用,可见; indexInParent:1; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | | | | | | | | | | | role:scroll bar; name:; virtual_accessible_name:; description:; text:; states:已启用,不透明,水平; indexInParent:2; childrenCount:2; x:-1; y:-1; width:-1; height:-1
+| | | | | | | | | | | | | | | | | role:push button; name:; virtual_accessible_name:; description:; text:; states:已启用,可见; indexInParent:0; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | | | | | | | | | | | | role:push button; name:; virtual_accessible_name:; description:; text:; states:已启用,可见; indexInParent:1; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | | | | | | | | role:list; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,正在显示,不透明,managesDescendents; indexInParent:2; childrenCount:0; x:3; y:859; width:249; height:0
+| | | | | | | | | | | role:scroll bar; name:; virtual_accessible_name:; description:; text:; states:已启用,不透明,垂直; indexInParent:1; childrenCount:2; x:-1; y:-1; width:-1; height:-1
+| | | | | | | | | | | | role:push button; name:; virtual_accessible_name:; description:; text:; states:已启用,可见; indexInParent:0; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | | | | | | | role:push button; name:; virtual_accessible_name:; description:; text:; states:已启用,可见; indexInParent:1; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | | | | | | role:scroll bar; name:; virtual_accessible_name:; description:; text:; states:已启用,不透明,水平; indexInParent:2; childrenCount:2; x:-1; y:-1; width:-1; height:-1
+| | | | | | | | | | | | role:push button; name:; virtual_accessible_name:; description:; text:; states:已启用,可见; indexInParent:0; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | | | | | | | role:push button; name:; virtual_accessible_name:; description:; text:; states:已启用,可见; indexInParent:1; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | | | | | role:panel; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,正在显示,不透明; indexInParent:1; childrenCount:2; x:257; y:115; width:1073; height:751
+| | | | | | | | | | | role:panel; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,正在显示,不透明; indexInParent:0; childrenCount:3; x:262; y:251; width:1068; height:609
+| | | | | | | | | | | | role:label; name:常用应用; virtual_accessible_name:常用应用; description:常用应用; text:; states:已启用,可集中,可见,正在显示; indexInParent:0; childrenCount:0; x:263; y:252; width:1066; height:30
+| | | | | | | | | | | | role:panel; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,正在显示,不透明; indexInParent:1; childrenCount:3; x:263; y:282; width:1066; height:557
+| | | | | | | | | | | | | role:label; name:核算项目余额表; virtual_accessible_name:核算项目余额表; description:核算项目余额表; text:; states:已启用,可集中,可见,正在显示; indexInParent:0; childrenCount:0; x:298; y:297; width:90; height:90
+| | | | | | | | | | | | | role:label; name:标准凭证引出; virtual_accessible_name:标准凭证引出; description:标准凭证引出; text:; states:已启用,可集中,可见,正在显示; indexInParent:1; childrenCount:0; x:423; y:297; width:90; height:90
+| | | | | | | | | | | | | role:label; name:凭证查询; virtual_accessible_name:凭证查询; description:凭证查询; text:; states:已启用,可集中,可见,正在显示; indexInParent:2; childrenCount:0; x:548; y:297; width:90; height:90
+| | | | | | | | | | | | role:panel; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,正在显示,不透明; indexInParent:2; childrenCount:1; x:263; y:839; width:1066; height:20
+| | | | | | | | | | | | | role:push button; name:; virtual_accessible_name:jar:file:D:\Kingdee\eas\client\lib\client\bos\bos_resource_common_ico.jar!/resources/common/ico/system/tbn_paging_2.gif; description:; text:; states:已启用,可集中; indexInParent:0; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | | | | | | role:panel; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,正在显示,不透明; indexInParent:1; childrenCount:2; x:262; y:125; width:1068; height:126
+| | | | | | | | | | | | role:panel; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,正在显示,不透明; indexInParent:0; childrenCount:0; x:262; y:241; width:1068; height:10
+| | | | | | | | | | | | role:panel; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,正在显示,不透明; indexInParent:1; childrenCount:18; x:262; y:125; width:1068; height:116
+| | | | | | | | | | | | | role:label; name:; virtual_accessible_name:jar:file:D:\Kingdee\eas\client\lib\client\bos\bos_resource_common_ico.jar!/resources/common/ico/system/personPhoto.png; description:; text:; states:已启用,可集中,可见,正在显示; indexInParent:0; childrenCount:0; x:282; y:139; width:62; height:84
+| | | | | | | | | | | | | role:label; name:消息中心; virtual_accessible_name:消息中心; description:消息中心; text:; states:已启用,可集中,可见,正在显示; indexInParent:1; childrenCount:0; x:391; y:141; width:148; height:19
+| | | | | | | | | | | | | role:label; name:任  务; virtual_accessible_name:任  务; description:; text:; states:已启用,可集中,可见,正在显示; indexInParent:2; childrenCount:0; x:385; y:205; width:60; height:19
+| | | | | | | | | | | | | role:label; name:通  知; virtual_accessible_name:通  知; description:; text:; states:已启用,可集中,可见,正在显示; indexInParent:3; childrenCount:0; x:475; y:205; width:60; height:19
+| | | | | | | | | | | | | role:label; name:即时消息; virtual_accessible_name:即时消息; description:; text:; states:已启用,可集中,可见,正在显示; indexInParent:4; childrenCount:0; x:565; y:205; width:60; height:19
+| | | | | | | | | | | | | role:label; name:0; virtual_accessible_name:0; description:; text:; states:已启用,可集中,可见,正在显示; indexInParent:5; childrenCount:0; x:385; y:177; width:60; height:25
+| | | | | | | | | | | | | role:label; name:999+; virtual_accessible_name:999+; description:; text:; states:已启用,可集中,可见,正在显示; indexInParent:6; childrenCount:0; x:475; y:177; width:60; height:25
+| | | | | | | | | | | | | role:label; name:999+; virtual_accessible_name:999+; description:; text:; states:已启用,可集中,可见,正在显示; indexInParent:7; childrenCount:0; x:565; y:177; width:60; height:25
+| | | | | | | | | | | | | role:label; name:; virtual_accessible_name:jar:file:D:\Kingdee\eas\client\lib\client\bos\bos_resource_common_ico.jar!/resources/common/ico/system/image_line.png; description:; text:; states:已启用,可集中,可见,正在显示; indexInParent:8; childrenCount:0; x:391; y:162; width:220; height:10
+| | | | | | | | | | | | | role:label; name:协作空间; virtual_accessible_name:协作空间; description:协作空间; text:; states:已启用,可集中; indexInParent:9; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | | | | | | | | role:label; name:我参与的; virtual_accessible_name:我参与的; description:; text:; states:已启用,可集中; indexInParent:10; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | | | | | | | | role:label; name:我发起的; virtual_accessible_name:我发起的; description:; text:; states:已启用,可集中; indexInParent:11; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | | | | | | | | role:label; name:0; virtual_accessible_name:0; description:; text:; states:已启用,可集中; indexInParent:12; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | | | | | | | | role:label; name:0; virtual_accessible_name:0; description:; text:; states:已启用,可集中; indexInParent:13; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | | | | | | | | role:label; name:; virtual_accessible_name:jar:file:D:\Kingdee\eas\client\lib\client\bos\bos_resource_common_ico.jar!/resources/common/ico/system/image_line.png; description:; text:; states:已启用,可集中; indexInParent:14; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | | | | | | | | role:separator; name:; virtual_accessible_name:; description:; text:; states:已启用,可见,正在显示; indexInParent:15; childrenCount:0; x:652; y:153; width:10; height:70
+| | | | | | | | | | | | | role:label; name:; virtual_accessible_name:我的云之家; description:我的云之家; text:; states:已启用,可集中,可见,正在显示; indexInParent:16; childrenCount:0; x:692; y:150; width:75; height:75
+| | | | | | | | | | | | | role:label; name:<html>我的<br/>云之家<html/>; virtual_accessible_name:<html>我的<br/>云之家<html/>; description:我的云之家; text:\n我的 云之家; states:已启用,可集中,可见,正在显示; indexInParent:17; childrenCount:0; x:777; y:165; width:150; height:40
+| | | | | | | role:page tab; name:消息中心; virtual_accessible_name:消息中心; description:; text:; states:已启用,可集中,可见,正在显示,不透明,可选择; indexInParent:1; childrenCount:1; x:106; y:77; width:100; height:35
+| | | | | | | | role:panel; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,不透明; indexInParent:4; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | | role:page tab; name:凭证序时簿; virtual_accessible_name:凭证序时簿; description:; text:; states:已启用,可集中,可见,正在显示,不透明,可选择; indexInParent:2; childrenCount:1; x:206; y:77; width:100; height:35
+| | | | | | | | role:panel; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,不透明; indexInParent:6; childrenCount:1; x:-1; y:-1; width:-1; height:-1
+| | | | | | | | | role:; name:; virtual_accessible_name:; description:; text:; states:; indexInParent:0; childrenCount:0; x:0; y:0; width:0; height:0
+| | | role:panel; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,正在显示; indexInParent:4; childrenCount:0; x:1342; y:77; width:0; height:802
+| | | role:panel; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,正在显示; indexInParent:5; childrenCount:0; x:0; y:879; width:1342; height:21
+| | | role:panel; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,正在显示; indexInParent:6; childrenCount:0; x:0; y:77; width:0; height:802
+| | | role:panel; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,正在显示; indexInParent:7; childrenCount:2; x:0; y:23; width:1342; height:54
+| | | | role:menu bar; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,正在显示,不透明; indexInParent:0; childrenCount:7; x:0; y:23; width:1342; height:27
+| | | | | role:label; name:; virtual_accessible_name:jar:file:D:\Kingdee\eas\client\lib\patch\sp-ctrl-kingdeelfm.jar!/com/kingdee/bos/ctrl/swing/plaf/resources/icons/green/kingdeelogo.png; description:; text:; states:已启用,可集中,可见,正在显示,可选择,不透明; indexInParent:0; childrenCount:0; x:1222; y:22; width:119; height:27
+| | | | | role:push button; name:; virtual_accessible_name:; description:; text:; states:已启用,可选择; indexInParent:1; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | role:menu; name:系统(S); virtual_accessible_name:系统(S); description:; text:; states:已启用,可集中,可见,正在显示,可选择; indexInParent:2; childrenCount:10; x:12; y:25; width:49; height:21
+| | | | | | role:menu item; name:个性化设置(I); virtual_accessible_name:个性化设置(I); description:; text:; states:已启用,可见,可选择,不透明; indexInParent:0; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | role:menu item; name:修改密码(E); virtual_accessible_name:修改密码(E); description:; text:; states:已启用,可见,可选择,不透明; indexInParent:1; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | role:menu item; name:设置默认组织; virtual_accessible_name:设置默认组织; description:; text:; states:已启用,可见,可选择,不透明; indexInParent:2; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | role:menu item; name:切换组织(T); virtual_accessible_name:切换组织(T); description:; text:; states:已启用,可见,可选择,不透明; indexInParent:3; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | role:menu item; name:切换账簿(K); virtual_accessible_name:切换账簿(K); description:; text:; states:已启用,可见,可选择,不透明; indexInParent:4; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | role:menu item; name:系统信息(S); virtual_accessible_name:系统信息(S); description:; text:; states:已启用,可见,可选择,不透明; indexInParent:5; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | role:menu item; name:更新本地数据; virtual_accessible_name:更新本地数据; description:; text:; states:已启用,可见,可选择,不透明; indexInParent:6; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | role:separator; name:; virtual_accessible_name:; description:; text:; states:已启用,可见,可选择; indexInParent:7; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | role:menu item; name:重新登录(R); virtual_accessible_name:重新登录(R); description:; text:; states:已启用,可见,可选择,不透明; indexInParent:8; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | role:menu item; name:退出系统(X); virtual_accessible_name:退出系统(X); description:; text:; states:已启用,可见,可选择,不透明; indexInParent:9; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | role:menu; name:工具(T); virtual_accessible_name:工具(T); description:; text:; states:已启用,可集中,可见,正在显示,可选择; indexInParent:3; childrenCount:3; x:65; y:25; width:47; height:21
+| | | | | | role:menu item; name:发送短信(M); virtual_accessible_name:发送短信(M); description:; text:; states:已启用,可见,可选择,不透明; indexInParent:0; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | role:menu item; name:计算器(C); virtual_accessible_name:计算器(C); description:; text:; states:已启用,可见,可选择,不透明; indexInParent:1; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | role:menu item; name:自定义工具栏(C); virtual_accessible_name:自定义工具栏(C); description:; text:; states:已启用,可选择,不透明; indexInParent:2; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | role:menu; name:帮助(H); virtual_accessible_name:帮助(H); description:; text:; states:已启用,可集中,可见,正在显示,可选择; indexInParent:4; childrenCount:10; x:116; y:25; width:49; height:21
+| | | | | | role:menu item; name:产品帮助(H); virtual_accessible_name:产品帮助(H); description:; text:; states:已启用,可见,可选择,不透明; indexInParent:0; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | role:separator; name:; virtual_accessible_name:; description:; text:; states:已启用,可见,可选择; indexInParent:1; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | role:menu item; name:徐少春个人号; virtual_accessible_name:徐少春个人号; description:; text:; states:已启用,可见,可选择,不透明; indexInParent:2; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | role:separator; name:; virtual_accessible_name:; description:; text:; states:已启用,可见,可选择; indexInParent:3; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | role:menu item; name:金蝶产品注册(R); virtual_accessible_name:金蝶产品注册(R); description:; text:; states:已启用,可见,可选择,不透明; indexInParent:4; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | role:menu item; name:在线服务(S); virtual_accessible_name:在线服务(S); description:; text:; states:已启用,可选择,不透明; indexInParent:5; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | role:separator; name:; virtual_accessible_name:; description:; text:; states:已启用,可见,可选择; indexInParent:6; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | role:menu item; name:正版验证(P); virtual_accessible_name:正版验证(P); description:; text:; states:已启用,可见,可选择,不透明; indexInParent:7; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | role:separator; name:; virtual_accessible_name:; description:; text:; states:已启用,可见,可选择; indexInParent:8; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | role:menu item; name:关于(A); virtual_accessible_name:关于(A); description:; text:; states:已启用,可见,可选择,不透明; indexInParent:9; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | role:panel; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,正在显示,可选择; indexInParent:5; childrenCount:2; x:940; y:23; width:280; height:25
+| | | | | | role:text; name:; virtual_accessible_name:录入快捷码或菜单名称(支持拼音和首字母); description:录入快捷码或菜单名称(支持拼音和首字母); text:财务会计\n; states:已启用,可集中,可见,正在显示,已集中,不透明,可编辑,单行; indexInParent:0; childrenCount:0; x:944; y:25; width:250; height:21
+| | | | | | role:push button; name:; virtual_accessible_name:jar:file:D:\Kingdee\eas\client\lib\client\bos\ctrl-kingdeelfm.jar!/com/kingdee/bos/ctrl/swing/plaf/resources/icons/green/menu_demand_1.png; description:; text:; states:已启用,可集中,可见,正在显示; indexInParent:1; childrenCount:0; x:1196; y:26; width:20; height:19
+| | | | | role:label; name:  服务有效期:2027-10-14; virtual_accessible_name:  服务有效期:2027-10-14; description:  服务有效期:2027-10-14; text:; states:已启用,可集中,可见,正在显示,可选择; indexInParent:6; childrenCount:0; x:167; y:23; width:133; height:25
+| | | | role:panel; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,正在显示,不透明; indexInParent:1; childrenCount:1; x:0; y:50; width:1342; height:27
+| | | | | role:tool bar; name:; virtual_accessible_name:; description:; text:; states:已启用,可集中,可见,正在显示; indexInParent:0; childrenCount:3; x:0; y:50; width:80; height:27
+| | | | | | role:push button; name:; virtual_accessible_name:; description:; text:; states:已启用; indexInParent:0; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | role:push button; name:页面设置; virtual_accessible_name:页面设置; description:页面设置; text:; states:已启用; indexInParent:1; childrenCount:0; x:-1; y:-1; width:-1; height:-1
+| | | | | | role:push button; name:个性化设置(I); virtual_accessible_name:个性化设置(I); description:个性化设置(I); text:; states:已启用,可见,正在显示; indexInParent:2; childrenCount:0; x:0; y:53; width:80; height:22
