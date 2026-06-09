@@ -25,10 +25,14 @@
     "system_menu": {
       "locator": "role:menu and name:系统(S)",
       "verification": "one visible menu"
-    },
+    }
+  },
+  "observed_controls": {
     "page_setup_button": {
       "locator": "role:push button and name:页面设置",
-      "verification": "one control in the current tree"
+      "visible": false,
+      "actionable": false,
+      "verification": "present in the JAB tree but not visible or actionable"
     }
   },
   "pending_controls": [

@@ -3,8 +3,14 @@ from __future__ import annotations
 import argparse
 from contextlib import contextmanager
 import ctypes
+import logging
+import os
 from pathlib import Path
+import sys
+import tempfile
+import threading
 import time
+from typing import Callable
 
 from JABWrapper.parsers.keybind_parser import AccessibleKeyBindingsParser
 from RPA.JavaAccessBridge import JavaAccessBridge
@@ -16,6 +22,8 @@ DEFAULT_DLL = Path(
 )
 DEFAULT_OUTPUT = PROJECT_ROOT / "artifacts" / "eas-controls.txt"
 NATIVE_EVIDENCE_LOCATOR = "role:label and name:凭证查询"
+LOGGER = logging.getLogger(__name__)
+_KEY_BINDINGS_PATCH_LOCK = threading.RLock()
 
 
 def _skip_key_bindings(self, jab_wrapper, context) -> None:
@@ -24,13 +32,14 @@ def _skip_key_bindings(self, jab_wrapper, context) -> None:
 
 @contextmanager
 def skip_broken_key_bindings():
-    """Temporarily avoid parsing corrupt key bindings from the EAS Java runtime."""
-    original_parse = AccessibleKeyBindingsParser.parse
-    AccessibleKeyBindingsParser.parse = _skip_key_bindings
-    try:
-        yield
-    finally:
-        AccessibleKeyBindingsParser.parse = original_parse
+    """Patch key-binding parsing only while this standalone probe owns the lock."""
+    with _KEY_BINDINGS_PATCH_LOCK:
+        original_parse = AccessibleKeyBindingsParser.parse
+        AccessibleKeyBindingsParser.parse = _skip_key_bindings
+        try:
+            yield
+        finally:
+            AccessibleKeyBindingsParser.parse = original_parse
 
 
 class QuietJavaAccessBridge(JavaAccessBridge):
@@ -49,7 +58,7 @@ def safe_text(value: object) -> str:
     )
 
 
-def write_control_tree(jab: JavaAccessBridge, output: Path) -> str:
+def render_control_tree(jab: JavaAccessBridge) -> str:
     lines = []
     for node in jab.context_info_tree:
         info = node.context_info
@@ -66,10 +75,30 @@ def write_control_tree(jab: JavaAccessBridge, output: Path) -> str:
             f"childrenCount:{info.childrenCount}; "
             f"x:{info.x}; y:{info.y}; width:{info.width}; height:{info.height}"
         )
-    tree = "\n".join(lines)
+    return "\n".join(lines)
+
+
+def publish_artifact(tree: str, output: Path) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(tree, encoding="utf-8")
-    return tree
+    temporary_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=output.parent,
+            prefix=f".{output.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as temporary:
+            temporary.write(tree)
+            temporary.flush()
+            os.fsync(temporary.fileno())
+            temporary_path = Path(temporary.name)
+        os.replace(temporary_path, output)
+        temporary_path = None
+    finally:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
 
 
 def focused_nodes(jab: JavaAccessBridge):
@@ -101,74 +130,117 @@ def restore_focus(jab: JavaAccessBridge, original_focus) -> None:
             raise RuntimeError("Failed to restore the original EAS focus.")
 
 
-def restore_foreground(original_foreground: int) -> None:
-    user32 = ctypes.windll.user32
+def restore_foreground_with(foreground_api, original_foreground: int) -> None:
     deadline = time.monotonic() + 0.5
-    while user32.GetForegroundWindow() != original_foreground:
+    while foreground_api.GetForegroundWindow() != original_foreground:
         if time.monotonic() >= deadline:
             break
         time.sleep(0.05)
-    if user32.GetForegroundWindow() == original_foreground:
+    if foreground_api.GetForegroundWindow() == original_foreground:
         return
 
-    user32.SetForegroundWindow(original_foreground)
+    foreground_api.SetForegroundWindow(original_foreground)
     deadline = time.monotonic() + 1
-    while user32.GetForegroundWindow() != original_foreground:
+    while foreground_api.GetForegroundWindow() != original_foreground:
         if time.monotonic() >= deadline:
             raise RuntimeError("Failed to restore the original foreground window.")
         time.sleep(0.05)
+
+
+def validate_native_evidence(jab: JavaAccessBridge, window_title: str) -> None:
+    evidence = jab.get_elements(NATIVE_EVIDENCE_LOCATOR, strict=True)
+    if len(evidence) != 1 or not all(
+        state in evidence[0].context_info.states
+        for state in ("可见", "正在显示")
+    ):
+        raise RuntimeError(
+            f"EAS window {window_title!r} was selected, but the control tree "
+            "does not contain exactly one visible native 凭证查询 control."
+        )
 
 
 def inspect_eas(
     title_contains: str = "金蝶EAS",
     output: Path = DEFAULT_OUTPUT,
     access_bridge_path: Path = DEFAULT_DLL,
+    bridge_factory: Callable[..., JavaAccessBridge] = QuietJavaAccessBridge,
+    foreground_api=None,
 ) -> str:
-    user32 = ctypes.windll.user32
-    original_foreground = user32.GetForegroundWindow()
-    with skip_broken_key_bindings():
-        jab = QuietJavaAccessBridge(
+    foreground_api = foreground_api or ctypes.windll.user32
+    original_foreground = foreground_api.GetForegroundWindow()
+    patch_context = skip_broken_key_bindings()
+    patch_active = False
+    jab = None
+    original_focus = []
+    window_selected = False
+    tree = None
+    primary_error = None
+    primary_traceback = None
+    cleanup_errors: list[tuple[str, BaseException]] = []
+
+    try:
+        patch_context.__enter__()
+        patch_active = True
+        jab = bridge_factory(
             ignore_callbacks=True,
             access_bridge_path=str(access_bridge_path),
         )
-        original_focus = []
-        window_selected = False
-        try:
-            windows = jab.list_java_windows()
-            matches = [window for window in windows if title_contains in window.title]
-            if len(matches) != 1:
-                available = (
-                    ", ".join(repr(window.title) for window in windows) or "<none>"
-                )
-                raise RuntimeError(
-                    f"Expected exactly one Java window containing {title_contains!r}; "
-                    f"found {len(matches)}. Available Java windows: {available}"
-                )
+        windows = jab.list_java_windows()
+        matches = [window for window in windows if title_contains in window.title]
+        if len(matches) != 1:
+            available = ", ".join(repr(window.title) for window in windows) or "<none>"
+            raise RuntimeError(
+                f"Expected exactly one Java window containing {title_contains!r}; "
+                f"found {len(matches)}. Available Java windows: {available}"
+            )
 
-            window = matches[0]
-            jab.select_window_by_pid(window.pid, bring_foreground=False)
-            window_selected = True
-            original_focus = focused_nodes(jab)
-            tree = write_control_tree(jab, output)
-            evidence = jab.get_elements(NATIVE_EVIDENCE_LOCATOR, strict=True)
-            if len(evidence) != 1 or not all(
-                state in evidence[0].context_info.states
-                for state in ("可见", "正在显示")
-            ):
-                raise RuntimeError(
-                    f"EAS window {window.title!r} was selected, but the control tree "
-                    "does not contain exactly one visible native 凭证查询 control."
-                )
-            return tree
-        finally:
+        window = matches[0]
+        jab.select_window_by_pid(window.pid, bring_foreground=False)
+        window_selected = True
+        original_focus = focused_nodes(jab)
+        tree = render_control_tree(jab)
+        validate_native_evidence(jab, window.title)
+    except BaseException as exc:
+        primary_error = exc
+        primary_traceback = sys.exc_info()[2]
+    finally:
+        if jab is not None and window_selected:
             try:
-                try:
-                    if window_selected:
-                        restore_focus(jab, original_focus)
-                finally:
-                    restore_foreground(original_foreground)
-            finally:
+                restore_focus(jab, original_focus)
+            except BaseException as exc:
+                cleanup_errors.append(("restore EAS focus", exc))
+        try:
+            restore_foreground_with(foreground_api, original_foreground)
+        except BaseException as exc:
+            cleanup_errors.append(("restore foreground window", exc))
+        if jab is not None:
+            try:
                 jab.shutdown_jab()
+            except BaseException as exc:
+                cleanup_errors.append(("shutdown JAB", exc))
+        if patch_active:
+            try:
+                patch_context.__exit__(None, None, None)
+            except BaseException as exc:
+                cleanup_errors.append(("restore key-binding parser", exc))
+
+    if primary_error is not None:
+        for action, error in cleanup_errors:
+            LOGGER.error("Cleanup failed while trying to %s: %s", action, error)
+        raise primary_error.with_traceback(primary_traceback)
+    if cleanup_errors:
+        action, error = cleanup_errors[0]
+        for extra_action, extra_error in cleanup_errors[1:]:
+            LOGGER.error(
+                "Additional cleanup failure while trying to %s: %s",
+                extra_action,
+                extra_error,
+            )
+        raise RuntimeError(f"Cleanup failed while trying to {action}: {error}") from error
+
+    assert tree is not None
+    publish_artifact(tree, output)
+    return tree
 
 
 def main() -> int:
