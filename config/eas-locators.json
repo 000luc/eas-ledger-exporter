@@ -14,10 +14,13 @@
       "locator": "role:text and description:录入快捷码或菜单名称(支持拼音和首字母)",
       "verification": "one visible editable single-line text control"
     },
-    "financial_accounting_probe": {
-      "locator": "role:text and description:录入快捷码或菜单名称(支持拼音和首字母)",
-      "expected_text": "财务会计",
-      "verification": "captured from the search control AccessibleText sentence"
+    "voucher_query": {
+      "locator": "role:label and name:凭证查询",
+      "verification": "one visible native control under 常用应用"
+    },
+    "standard_voucher_export": {
+      "locator": "role:label and name:标准凭证引出",
+      "verification": "one visible native control under 常用应用"
     },
     "system_menu": {
       "locator": "role:menu and name:系统(S)",
@@ -29,9 +32,9 @@
     }
   },
   "pending_controls": [
-    "财务会计分类节点",
+    "财务会计分类标签",
     "条件查询",
     "导出"
   ],
-  "pending_reason": "The application-category list uses managesDescendents and exposes blank names for its rendered labels. The current menu search exposes 财务会计 through AccessibleText but returns 无搜索结果, so this does not verify a 财务会计 category locator. 条件查询 and 导出 are not visible in the current tree."
+  "pending_reason": "The application-category list uses managesDescendents and does not expose the 财务会计 category label. Native 常用应用 controls 凭证查询 and 标准凭证引出 are verified through JAB. 条件查询 and 导出 are not visible in the current tree."
 }

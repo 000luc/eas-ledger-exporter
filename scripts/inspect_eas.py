@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import argparse
 from contextlib import contextmanager
+import ctypes
 from pathlib import Path
 import time
 
-import pyperclip
 from JABWrapper.parsers.keybind_parser import AccessibleKeyBindingsParser
 from RPA.JavaAccessBridge import JavaAccessBridge
 
@@ -15,9 +15,7 @@ DEFAULT_DLL = Path(
     r"D:\Kingdee\eas\oracle_jdk1.8\jre\bin\WindowsAccessBridge-64.dll"
 )
 DEFAULT_OUTPUT = PROJECT_ROOT / "artifacts" / "eas-controls.txt"
-MENU_SEARCH_LOCATOR = (
-    "role:text and description:录入快捷码或菜单名称(支持拼音和首字母)"
-)
+NATIVE_EVIDENCE_LOCATOR = "role:label and name:凭证查询"
 
 
 def _skip_key_bindings(self, jab_wrapper, context) -> None:
@@ -74,53 +72,51 @@ def write_control_tree(jab: JavaAccessBridge, output: Path) -> str:
     return tree
 
 
-def control_text(node) -> str:
-    if not node.context_info.accessibleText:
-        return ""
-    return node.text.items.sentence.rstrip("\r\n")
+def focused_nodes(jab: JavaAccessBridge):
+    return [
+        node
+        for node in jab.context_info_tree
+        if "已集中" in node.context_info.states
+    ]
 
 
-def replace_control_text(node, text: str) -> None:
-    node.request_focus()
-    node.do_action("select-all")
-    if text:
-        pyperclip.copy(text)
-        node.do_action("paste-from-clipboard")
-    else:
-        node.do_action("delete-next")
+def node_identity(node) -> tuple[str, str, str, int]:
+    info = node.context_info
+    return info.role, info.name, info.description, info.indexInParent
 
 
-def probe_menu_text(jab: JavaAccessBridge, output: Path, text: str) -> str:
-    matches = jab.get_elements(MENU_SEARCH_LOCATOR, strict=True)
-    if len(matches) != 1:
-        raise RuntimeError(
-            f"Expected exactly one EAS menu search control; found {len(matches)}."
-        )
-    search_control = matches[0]
-    original_text = control_text(search_control)
-    original_clipboard = pyperclip.paste()
-    try:
-        replace_control_text(search_control, text)
-        time.sleep(1)
+def restore_focus(jab: JavaAccessBridge, original_focus) -> None:
+    jab.application_refresh()
+    current_focus = focused_nodes(jab)
+    if [node_identity(node) for node in current_focus] != [
+        node_identity(node) for node in original_focus
+    ]:
+        if len(original_focus) != 1:
+            raise RuntimeError("Cannot restore ambiguous EAS focus state.")
+        original_focus[0].request_focus()
         jab.application_refresh()
-        return write_control_tree(jab, output)
-    finally:
-        try:
-            replace_control_text(search_control, original_text)
-            time.sleep(0.5)
-            jab.application_refresh()
-            restored = jab.get_elements(MENU_SEARCH_LOCATOR, strict=True)
-            if len(restored) != 1:
-                raise RuntimeError(
-                    "Could not verify restoration of the EAS menu search control."
-                )
-            restored_text = control_text(restored[0])
-            if restored_text != original_text:
-                raise RuntimeError(
-                    "EAS menu search text was not restored after accessibility probe."
-                )
-        finally:
-            pyperclip.copy(original_clipboard)
+        if [node_identity(node) for node in focused_nodes(jab)] != [
+            node_identity(node) for node in original_focus
+        ]:
+            raise RuntimeError("Failed to restore the original EAS focus.")
+
+
+def restore_foreground(original_foreground: int) -> None:
+    user32 = ctypes.windll.user32
+    deadline = time.monotonic() + 0.5
+    while user32.GetForegroundWindow() != original_foreground:
+        if time.monotonic() >= deadline:
+            break
+        time.sleep(0.05)
+    if user32.GetForegroundWindow() == original_foreground:
+        return
+
+    user32.SetForegroundWindow(original_foreground)
+    deadline = time.monotonic() + 1
+    while user32.GetForegroundWindow() != original_foreground:
+        if time.monotonic() >= deadline:
+            raise RuntimeError("Failed to restore the original foreground window.")
+        time.sleep(0.05)
 
 
 def inspect_eas(
@@ -128,11 +124,15 @@ def inspect_eas(
     output: Path = DEFAULT_OUTPUT,
     access_bridge_path: Path = DEFAULT_DLL,
 ) -> str:
+    user32 = ctypes.windll.user32
+    original_foreground = user32.GetForegroundWindow()
     with skip_broken_key_bindings():
         jab = QuietJavaAccessBridge(
             ignore_callbacks=True,
             access_bridge_path=str(access_bridge_path),
         )
+        original_focus = []
+        window_selected = False
         try:
             windows = jab.list_java_windows()
             matches = [window for window in windows if title_contains in window.title]
@@ -147,17 +147,28 @@ def inspect_eas(
 
             window = matches[0]
             jab.select_window_by_pid(window.pid, bring_foreground=False)
+            window_selected = True
+            original_focus = focused_nodes(jab)
             tree = write_control_tree(jab, output)
-            if "text:财务会计" not in tree:
-                tree = probe_menu_text(jab, output, "财务会计")
-            if "text:财务会计" not in tree:
+            evidence = jab.get_elements(NATIVE_EVIDENCE_LOCATOR, strict=True)
+            if len(evidence) != 1 or not all(
+                state in evidence[0].context_info.states
+                for state in ("可见", "正在显示")
+            ):
                 raise RuntimeError(
                     f"EAS window {window.title!r} was selected, but the control tree "
-                    "does not contain '财务会计'."
+                    "does not contain exactly one visible native 凭证查询 control."
                 )
             return tree
         finally:
-            jab.shutdown_jab()
+            try:
+                try:
+                    if window_selected:
+                        restore_focus(jab, original_focus)
+                finally:
+                    restore_foreground(original_foreground)
+            finally:
+                jab.shutdown_jab()
 
 
 def main() -> int:
