@@ -12,8 +12,16 @@ from .models import Company, ExportConfig
 
 
 REQUIRED_SHEETS = ("执行期间", "执行操作的公司")
-CORRUPT_FILE_ERRORS = (BadZipFile, InvalidFileException, ParseError, EOFError)
-OPEN_WORKBOOK_ERRORS = CORRUPT_FILE_ERRORS + (KeyError,)
+OPEN_WORKBOOK_ERRORS = (
+    BadZipFile,
+    InvalidFileException,
+    ParseError,
+    EOFError,
+    KeyError,
+    OSError,
+    SyntaxError,
+    ValueError,
+)
 
 
 def _required_integer(value: object, label: str) -> int:
@@ -38,9 +46,11 @@ def _company_code(value: object, row_number: int) -> str:
         number = int(value)
     elif isinstance(value, str):
         text = value.strip()
-        if not text or not text.isdecimal():
-            raise ConfigError(f"第{row_number}行公司编号必须是整数")
-        number = int(text)
+        if not 1 <= len(text) <= 3:
+            raise ConfigError(f"第{row_number}行公司编号必须是1至3位ASCII数字")
+        if not all("0" <= character <= "9" for character in text):
+            raise ConfigError(f"第{row_number}行公司编号必须是ASCII数字")
+        return text.zfill(3)
     else:
         raise ConfigError(f"第{row_number}行公司编号必须是整数")
 
@@ -53,6 +63,10 @@ def _company_name(value: object, row_number: int) -> str:
     if not isinstance(value, str) or not value.strip():
         raise ConfigError(f"第{row_number}行公司名称不能为空")
     return value.strip()
+
+
+def _is_blank(value: object) -> bool:
+    return value is None or isinstance(value, str) and not value.strip()
 
 
 def _parse_workbook(workbook) -> ExportConfig:
@@ -78,7 +92,13 @@ def _parse_workbook(workbook) -> ExportConfig:
         min_row=2, max_col=3, values_only=True
     )
     for row_number, (code, name, enabled) in enumerate(rows, start=2):
-        if not isinstance(enabled, str) or enabled.strip() != "是":
+        if all(_is_blank(value) for value in (code, name, enabled)):
+            continue
+        if not isinstance(enabled, str) or enabled.strip() not in ("是", "否"):
+            raise ConfigError(
+                f"第{row_number}行“是否执行”必须填写“是”或“否”"
+            )
+        if enabled.strip() == "否":
             continue
         normalized_code = _company_code(code, row_number)
         if normalized_code in seen_codes:
@@ -99,22 +119,41 @@ def _parse_workbook(workbook) -> ExportConfig:
     )
 
 
+def _close_resources(workbook, stream) -> Exception | None:
+    first_error = None
+    for resource in (workbook, stream):
+        if resource is None:
+            continue
+        try:
+            resource.close()
+        except Exception as exc:
+            if first_error is None:
+                first_error = exc
+    return first_error
+
+
 def load_config(path: Path) -> ExportConfig:
     path = Path(path)
     if not path.is_file():
         raise ConfigError(f"配置文件不存在：{path}")
 
     try:
-        workbook = load_workbook(path, read_only=True, data_only=True)
-    except OPEN_WORKBOOK_ERRORS as exc:
-        raise ConfigError(f"配置文件损坏或格式无效：{path}") from exc
+        stream = path.open("rb")
     except OSError as exc:
         raise ConfigError(f"无法读取配置文件“{path}”：{exc}") from exc
 
+    workbook = None
     try:
         try:
-            return _parse_workbook(workbook)
-        except CORRUPT_FILE_ERRORS as exc:
+            workbook = load_workbook(stream, read_only=True, data_only=True)
+        except OPEN_WORKBOOK_ERRORS as exc:
             raise ConfigError(f"配置文件损坏或格式无效：{path}") from exc
-    finally:
-        workbook.close()
+        result = _parse_workbook(workbook)
+    except BaseException:
+        _close_resources(workbook, stream)
+        raise
+
+    close_error = _close_resources(workbook, stream)
+    if close_error is not None:
+        raise ConfigError(f"关闭配置文件失败“{path}”：{close_error}") from close_error
+    return result

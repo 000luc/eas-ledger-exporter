@@ -51,6 +51,30 @@ def test_load_config_normalizes_numeric_company_codes(
     assert config.companies[0].code == expected
 
 
+@pytest.mark.parametrize(
+    ("raw_code", "expected"),
+    [("1", "001"), ("01", "001"), ("001", "001")],
+)
+def test_load_config_preserves_valid_ascii_string_company_codes(
+    make_config_book, raw_code, expected
+):
+    config = load_config(
+        make_config_book(companies=((raw_code, "广州本部", "是"),))
+    )
+
+    assert config.companies[0].code == expected
+
+
+@pytest.mark.parametrize("raw_code", ("0001", "１", "１２３"))
+def test_load_config_rejects_invalid_string_company_code_format(
+    make_config_book, raw_code
+):
+    path = make_config_book(companies=((raw_code, "广州本部", "是"),))
+
+    with pytest.raises(ConfigError, match="第2行公司编号"):
+        load_config(path)
+
+
 @pytest.mark.parametrize("month", (0, 13, "六月", True))
 def test_load_config_rejects_invalid_month(make_config_book, month):
     with pytest.raises(ConfigError, match="月份"):
@@ -62,6 +86,26 @@ def test_load_config_rejects_no_enabled_company(make_config_book):
 
     with pytest.raises(ConfigError, match="没有启用的公司"):
         load_config(path)
+
+
+@pytest.mark.parametrize("enabled", (True, 1, 0, "是的", "Y", "", None))
+def test_load_config_rejects_invalid_execution_flag_on_business_row(
+    make_config_book, enabled
+):
+    path = make_config_book(companies=(("001", "广州本部", enabled),))
+
+    with pytest.raises(ConfigError, match="第2行.*是否执行.*是.*否"):
+        load_config(path)
+
+
+def test_load_config_skips_completely_blank_company_rows(make_config_book):
+    config = load_config(
+        make_config_book(
+            companies=((None, None, None), ("001", "广州本部", "是"))
+        )
+    )
+
+    assert config.companies == (Company("001", "广州本部"),)
 
 
 @pytest.mark.parametrize("missing_sheet", ("执行期间", "执行操作的公司"))
@@ -146,6 +190,26 @@ def test_load_config_wraps_xlsx_missing_required_zip_parts(tmp_path):
         load_config(malformed)
 
 
+def test_load_config_wraps_malformed_workbook_xml_and_releases_file(
+    make_config_book, tmp_path
+):
+    source = make_config_book(filename="source.xlsx")
+    malformed = tmp_path / "malformed-workbook.xlsx"
+
+    with ZipFile(source) as source_archive, ZipFile(malformed, "w") as target:
+        for item in source_archive.infolist():
+            content = source_archive.read(item.filename)
+            if item.filename == "xl/workbook.xml":
+                content = b"<workbook><broken>"
+            target.writestr(item, content)
+
+    with pytest.raises(ConfigError, match="配置文件损坏或格式无效"):
+        load_config(malformed)
+    malformed.unlink()
+
+    assert not malformed.exists()
+
+
 def test_load_config_does_not_wrap_business_logic_key_error(tmp_path, monkeypatch):
     path = tmp_path / "info.xlsx"
     path.touch()
@@ -168,6 +232,49 @@ def test_load_config_does_not_wrap_business_logic_key_error(tmp_path, monkeypatc
         load_config(path)
 
     assert workbook.closed is True
+
+
+def test_load_config_preserves_primary_error_when_workbook_close_fails(
+    tmp_path, monkeypatch
+):
+    path = tmp_path / "info.xlsx"
+    path.touch()
+
+    class Workbook:
+        def close(self):
+            raise OSError("close failed")
+
+    monkeypatch.setattr(
+        config_module, "load_workbook", lambda *args, **kwargs: Workbook()
+    )
+    monkeypatch.setattr(
+        config_module,
+        "_parse_workbook",
+        lambda opened: (_ for _ in ()).throw(KeyError("primary error")),
+    )
+
+    with pytest.raises(KeyError, match="primary error"):
+        load_config(path)
+
+
+def test_load_config_wraps_workbook_close_failure_after_success(
+    tmp_path, monkeypatch
+):
+    path = tmp_path / "info.xlsx"
+    path.touch()
+    expected = ExportConfig(2026, 6, tmp_path, (Company("001", "广州本部"),))
+
+    class Workbook:
+        def close(self):
+            raise OSError("close failed")
+
+    monkeypatch.setattr(
+        config_module, "load_workbook", lambda *args, **kwargs: Workbook()
+    )
+    monkeypatch.setattr(config_module, "_parse_workbook", lambda opened: expected)
+
+    with pytest.raises(ConfigError, match="关闭配置文件失败"):
+        load_config(path)
 
 
 def test_load_config_closes_workbook_after_success(make_config_book):
