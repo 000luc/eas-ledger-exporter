@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from dataclasses import FrozenInstanceError
 from pathlib import Path
+from zipfile import ZipFile
 
 import pytest
 
+import eas_ledger_exporter.config as config_module
 from eas_ledger_exporter.config import load_config
 from eas_ledger_exporter.errors import ConfigError
 from eas_ledger_exporter.models import Company, ExportConfig
@@ -125,6 +127,47 @@ def test_load_config_wraps_missing_and_corrupt_files(tmp_path):
         load_config(missing)
     with pytest.raises(ConfigError, match="配置文件损坏或格式无效"):
         load_config(corrupt)
+
+
+def test_load_config_wraps_xlsx_missing_required_zip_parts(tmp_path):
+    malformed = tmp_path / "missing-workbook.xlsx"
+    with ZipFile(malformed, "w") as archive:
+        archive.writestr(
+            "[Content_Types].xml",
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+            '<Override PartName="/xl/workbook.xml" '
+            'ContentType="application/vnd.openxmlformats-officedocument.'
+            'spreadsheetml.sheet.main+xml"/>'
+            "</Types>",
+        )
+
+    with pytest.raises(ConfigError, match="配置文件损坏或格式无效"):
+        load_config(malformed)
+
+
+def test_load_config_does_not_wrap_business_logic_key_error(tmp_path, monkeypatch):
+    path = tmp_path / "info.xlsx"
+    path.touch()
+
+    class Workbook:
+        closed = False
+
+        def close(self):
+            self.closed = True
+
+    workbook = Workbook()
+    monkeypatch.setattr(config_module, "load_workbook", lambda *args, **kwargs: workbook)
+    monkeypatch.setattr(
+        config_module,
+        "_parse_workbook",
+        lambda opened: (_ for _ in ()).throw(KeyError("programming error")),
+    )
+
+    with pytest.raises(KeyError, match="programming error"):
+        load_config(path)
+
+    assert workbook.closed is True
 
 
 def test_load_config_closes_workbook_after_success(make_config_book):

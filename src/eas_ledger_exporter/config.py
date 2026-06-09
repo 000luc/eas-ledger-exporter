@@ -13,6 +13,7 @@ from .models import Company, ExportConfig
 
 REQUIRED_SHEETS = ("执行期间", "执行操作的公司")
 CORRUPT_FILE_ERRORS = (BadZipFile, InvalidFileException, ParseError, EOFError)
+OPEN_WORKBOOK_ERRORS = CORRUPT_FILE_ERRORS + (KeyError,)
 
 
 def _required_integer(value: object, label: str) -> int:
@@ -105,7 +106,7 @@ def load_config(path: Path) -> ExportConfig:
 
     try:
         workbook = load_workbook(path, read_only=True, data_only=True)
-    except CORRUPT_FILE_ERRORS as exc:
+    except OPEN_WORKBOOK_ERRORS as exc:
         raise ConfigError(f"配置文件损坏或格式无效：{path}") from exc
     except OSError as exc:
         raise ConfigError(f"无法读取配置文件“{path}”：{exc}") from exc
