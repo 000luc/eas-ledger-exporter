@@ -4,18 +4,46 @@ import math
 import time
 from pathlib import Path
 from typing import Callable
+from zipfile import BadZipFile, ZipFile
 
-from .errors import ExportTimeoutError
+from .errors import ExportFileError, ExportTimeoutError
 
 
-def _validate_number(name: str, value: object, *, allow_zero: bool) -> float:
+Validator = Callable[[Path], None]
+_REQUIRED_XLSX_PARTS = frozenset(("[Content_Types].xml", "xl/workbook.xml"))
+
+
+class _IncompleteXlsxError(Exception):
+    pass
+
+
+def _validate_positive_number(name: str, value: object) -> float:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise TypeError(f"{name} 必须是有限数值")
     number = float(value)
-    if not math.isfinite(number) or number < 0 or (number == 0 and not allow_zero):
-        comparison = "大于等于 0" if allow_zero else "大于 0"
-        raise ValueError(f"{name} 必须是{comparison}的有限数值")
+    if not math.isfinite(number) or number <= 0:
+        raise ValueError(f"{name} 必须是大于 0 的有限数值")
     return number
+
+
+def _validate_xlsx(path: Path) -> None:
+    try:
+        with ZipFile(path) as archive:
+            names = frozenset(archive.namelist())
+    except (BadZipFile, EOFError) as exc:
+        raise _IncompleteXlsxError from exc
+    if not _REQUIRED_XLSX_PARTS <= names:
+        raise _IncompleteXlsxError
+
+
+def _is_temporary_file_error(exc: OSError) -> bool:
+    return isinstance(exc, (PermissionError, BlockingIOError)) or getattr(
+        exc, "winerror", None
+    ) in (32, 33)
+
+
+def _raise_file_error(target: Path, exc: OSError) -> None:
+    raise ExportFileError(f"无法检查导出文件：{target}") from exc
 
 
 def wait_until_stable(
@@ -26,54 +54,71 @@ def wait_until_stable(
     *,
     clock: Callable[[], float] = time.monotonic,
     sleeper: Callable[[float], None] = time.sleep,
+    validator: Validator | None = None,
 ) -> Path:
-    timeout_value = _validate_number("timeout", timeout, allow_zero=False)
-    interval_value = _validate_number("interval", interval, allow_zero=True)
-    if (
-        isinstance(stable_checks, bool)
-        or not isinstance(stable_checks, int)
-        or stable_checks < 1
-    ):
+    timeout_value = _validate_positive_number("timeout", timeout)
+    interval_value = _validate_positive_number("interval", interval)
+    if isinstance(stable_checks, bool) or not isinstance(stable_checks, int):
+        raise TypeError("stable_checks 必须是大于等于 1 的整数")
+    if stable_checks < 1:
         raise ValueError("stable_checks 必须是大于等于 1 的整数")
 
     target = Path(path)
     deadline = clock() + timeout_value
-    previous_size: int | None = None
+    validate = validator or _validate_xlsx
+    previous_fingerprint: tuple[int, int] | None = None
     stable_count = 0
     last_state = "不存在"
 
     while True:
         try:
-            size = target.stat().st_size
+            stat = target.stat()
         except FileNotFoundError:
-            previous_size = None
+            previous_fingerprint = None
             stable_count = 0
             last_state = "不存在"
-        except OSError:
-            previous_size = None
+        except OSError as exc:
+            if not _is_temporary_file_error(exc):
+                _raise_file_error(target, exc)
+            previous_fingerprint = None
             stable_count = 0
             last_state = "文件被占用或无法读取"
         else:
-            if size == 0:
-                previous_size = None
+            if stat.st_size == 0:
+                previous_fingerprint = None
                 stable_count = 0
                 last_state = "空文件"
             else:
                 try:
-                    with target.open("rb"):
-                        pass
-                except OSError:
-                    previous_size = None
+                    validate(target)
+                except FileNotFoundError:
+                    previous_fingerprint = None
+                    stable_count = 0
+                    last_state = "不存在"
+                except (_IncompleteXlsxError, BadZipFile, EOFError):
+                    previous_fingerprint = None
+                    stable_count = 0
+                    last_state = "仍在写入/ZIP未完成"
+                except OSError as exc:
+                    if not _is_temporary_file_error(exc):
+                        _raise_file_error(target, exc)
+                    previous_fingerprint = None
                     stable_count = 0
                     last_state = "文件被占用或无法读取"
                 else:
-                    if previous_size == size:
+                    fingerprint = (stat.st_size, stat.st_mtime_ns)
+                    if previous_fingerprint == fingerprint:
                         stable_count += 1
                     else:
-                        previous_size = size
+                        previous_fingerprint = fingerprint
                         stable_count = 0
                     last_state = "仍在写入"
                     if stable_count >= stable_checks:
+                        if clock() >= deadline:
+                            raise ExportTimeoutError(
+                                f"等待 {timeout_value:g} 秒后超时：{target}；"
+                                f"最后状态：{last_state}"
+                            )
                         return target
 
         now = clock()

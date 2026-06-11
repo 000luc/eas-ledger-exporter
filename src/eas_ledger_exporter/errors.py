@@ -4,3 +4,7 @@ class ConfigError(Exception):
 
 class ExportTimeoutError(TimeoutError):
     """导出文件在指定时间内未达到稳定可读状态。"""
+
+
+class ExportFileError(OSError):
+    """导出文件无法继续检查或读取时抛出。"""

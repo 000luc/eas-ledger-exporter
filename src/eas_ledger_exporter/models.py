@@ -67,14 +67,20 @@ class ExportJob:
         ):
             raise ValueError("公司名称包含 Windows 文件名不允许的内容")
 
+        filename = self._filename()
+        if len(filename.encode("utf-16-le")) // 2 > 255:
+            raise ValueError("最终文件名不能超过 255 个 UTF-16 code units")
+
+    def _filename(self) -> str:
+        return (
+            f"{self.company.code}.{self.company.name}_"
+            f"{self.period}_凭证序时簿.xlsx"
+        )
+
     @property
     def period(self) -> str:
         return f"{self.year:04d}{self.month:02d}"
 
     @property
     def path(self) -> Path:
-        filename = (
-            f"{self.company.code}.{self.company.name}_"
-            f"{self.period}_凭证序时簿.xlsx"
-        )
-        return self.output_dir / filename
+        return self.output_dir / self._filename()

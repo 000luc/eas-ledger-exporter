@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import FrozenInstanceError
+import errno
+import os
 from pathlib import Path
+from zipfile import BadZipFile, ZipFile
 
 import pytest
 
-from eas_ledger_exporter.errors import ExportTimeoutError
+from eas_ledger_exporter.errors import ExportFileError, ExportTimeoutError
 from eas_ledger_exporter.file_wait import wait_until_stable
 from eas_ledger_exporter.models import Company, ExportJob
 
@@ -26,6 +29,16 @@ class FakeTime:
             self.on_sleep(self.sleeps)
 
 
+class SequenceClock:
+    def __init__(self, *readings):
+        self._readings = iter(readings)
+        self._last = readings[-1]
+
+    def __call__(self):
+        self._last = next(self._readings, self._last)
+        return self._last
+
+
 def wait(path, fake_time, **kwargs):
     return wait_until_stable(
         path,
@@ -35,6 +48,14 @@ def wait(path, fake_time, **kwargs):
         sleeper=fake_time.sleep,
         **kwargs,
     )
+
+
+def write_xlsx(path, *, workbook=True, content_types=True):
+    with ZipFile(path, "w") as archive:
+        if content_types:
+            archive.writestr("[Content_Types].xml", "<Types/>")
+        if workbook:
+            archive.writestr("xl/workbook.xml", "<workbook/>")
 
 
 def test_export_job_builds_six_digit_period_and_path(tmp_path):
@@ -93,9 +114,14 @@ def test_export_job_rejects_unsafe_company_name(tmp_path, name):
         ExportJob(Company("001", name), 2026, 6, tmp_path)
 
 
+def test_export_job_rejects_filename_over_255_utf16_code_units(tmp_path):
+    with pytest.raises(ValueError, match="文件名.*255"):
+        ExportJob(Company("001", "😀" * 120), 2026, 6, tmp_path)
+
+
 def test_wait_requires_baseline_plus_two_equal_observations(tmp_path):
     path = tmp_path / "ledger.xlsx"
-    path.write_bytes(b"ready")
+    write_xlsx(path)
     fake_time = FakeTime()
 
     assert wait(path, fake_time, stable_checks=2) == path
@@ -104,11 +130,12 @@ def test_wait_requires_baseline_plus_two_equal_observations(tmp_path):
 
 def test_size_change_resets_stability_count(tmp_path):
     path = tmp_path / "ledger.xlsx"
-    path.write_bytes(b"a")
+    write_xlsx(path)
 
     def mutate(sleeps):
         if sleeps == 1:
-            path.write_bytes(b"changed")
+            with ZipFile(path, "a") as archive:
+                archive.writestr("changed.xml", "changed")
 
     fake_time = FakeTime(mutate)
 
@@ -118,13 +145,13 @@ def test_size_change_resets_stability_count(tmp_path):
 
 def test_disappearance_resets_baseline_and_stability_count(tmp_path):
     path = tmp_path / "ledger.xlsx"
-    path.write_bytes(b"ready")
+    write_xlsx(path)
 
     def mutate(sleeps):
         if sleeps == 1:
             path.unlink()
         elif sleeps == 2:
-            path.write_bytes(b"ready")
+            write_xlsx(path)
 
     fake_time = FakeTime(mutate)
 
@@ -132,69 +159,163 @@ def test_disappearance_resets_baseline_and_stability_count(tmp_path):
     assert fake_time.sleeps == 4
 
 
-@pytest.mark.parametrize("open_error", (PermissionError, OSError))
+@pytest.mark.parametrize(
+    "open_error",
+    (
+        PermissionError,
+        lambda message: OSError(13, message, None, 32),
+    ),
+)
 def test_locked_file_recovers_and_each_open_is_closed(
     tmp_path, monkeypatch, open_error
 ):
     path = tmp_path / "ledger.xlsx"
-    path.write_bytes(b"ready")
-    real_open = Path.open
+    write_xlsx(path)
     attempts = 0
-    opened = []
 
-    class TrackedFile:
-        def __init__(self, wrapped):
-            self.wrapped = wrapped
-            self.closed = False
-
-        def __enter__(self):
-            return self
-
-        def __exit__(self, *args):
-            self.wrapped.close()
-            self.closed = True
-
-    def controlled_open(self, *args, **kwargs):
+    def validator(candidate):
         nonlocal attempts
-        if self != path:
-            return real_open(self, *args, **kwargs)
+        assert candidate == path
         attempts += 1
         if attempts == 1:
             raise open_error("locked")
-        tracked = TrackedFile(real_open(self, *args, **kwargs))
-        opened.append(tracked)
-        return tracked
 
-    monkeypatch.setattr(Path, "open", controlled_open)
     fake_time = FakeTime()
 
-    assert wait(path, fake_time, stable_checks=2) == path
+    assert wait(path, fake_time, stable_checks=2, validator=validator) == path
     assert attempts == 4
-    assert opened and all(item.closed for item in opened)
     path.unlink()
 
 
 def test_read_failure_requires_a_new_baseline_before_stability(tmp_path, monkeypatch):
     path = tmp_path / "ledger.xlsx"
-    path.write_bytes(b"0123456789")
-    real_open = Path.open
+    write_xlsx(path)
     attempts = 0
 
-    def fail_second_open(self, *args, **kwargs):
+    def fail_second_validation(candidate):
         nonlocal attempts
-        if self != path:
-            return real_open(self, *args, **kwargs)
+        assert candidate == path
         attempts += 1
         if attempts == 2:
             raise PermissionError("locked")
-        return real_open(self, *args, **kwargs)
 
-    monkeypatch.setattr(Path, "open", fail_second_open)
     fake_time = FakeTime()
 
-    assert wait(path, fake_time, stable_checks=2) == path
+    assert wait(
+        path, fake_time, stable_checks=2, validator=fail_second_validation
+    ) == path
     assert attempts == 5
     assert fake_time.sleeps == 4
+
+
+def test_disappearance_during_validation_resets_baseline(tmp_path):
+    path = tmp_path / "ledger.xlsx"
+    write_xlsx(path)
+    attempts = 0
+
+    def disappear_once(candidate):
+        nonlocal attempts
+        attempts += 1
+        if attempts == 2:
+            candidate.unlink()
+            raise FileNotFoundError(candidate)
+
+    def recreate(sleeps):
+        if sleeps == 2:
+            write_xlsx(path)
+
+    fake_time = FakeTime(recreate)
+
+    assert wait(
+        path, fake_time, stable_checks=1, validator=disappear_once
+    ) == path
+    assert fake_time.sleeps == 3
+
+
+@pytest.mark.parametrize("validation_error", (BadZipFile, EOFError))
+def test_incomplete_validation_errors_are_retryable(tmp_path, validation_error):
+    path = tmp_path / "ledger.xlsx"
+    write_xlsx(path)
+
+    with pytest.raises(ExportTimeoutError, match="仍在写入/ZIP未完成"):
+        wait(
+            path,
+            FakeTime(),
+            timeout=1,
+            validator=lambda _path: (_ for _ in ()).throw(validation_error()),
+        )
+
+
+def test_valid_xlsx_zip_succeeds(tmp_path):
+    path = tmp_path / "ledger.xlsx"
+    write_xlsx(path)
+
+    assert wait(path, FakeTime(), stable_checks=1) == path
+
+
+@pytest.mark.parametrize(
+    "writer",
+    (
+        lambda path: path.write_bytes(b"PK\x03\x04unfinished"),
+        lambda path: write_xlsx(path, workbook=False),
+        lambda path: write_xlsx(path, content_types=False),
+    ),
+)
+def test_incomplete_xlsx_zip_keeps_waiting_until_timeout(tmp_path, writer):
+    path = tmp_path / "ledger.xlsx"
+    writer(path)
+
+    with pytest.raises(ExportTimeoutError, match="仍在写入/ZIP未完成"):
+        wait(path, FakeTime(), timeout=2)
+
+
+def test_same_size_mtime_change_resets_stability(tmp_path):
+    path = tmp_path / "ledger.xlsx"
+    write_xlsx(path)
+    initial = path.stat().st_mtime_ns
+
+    def touch_once(sleeps):
+        if sleeps == 1:
+            os.utime(path, ns=(initial + 1_000_000, initial + 1_000_000))
+
+    fake_time = FakeTime(touch_once)
+
+    assert wait(path, fake_time, stable_checks=1) == path
+    assert fake_time.sleeps == 2
+
+
+def test_deadline_crossed_before_return_times_out(tmp_path):
+    path = tmp_path / "ledger.xlsx"
+    write_xlsx(path)
+    clock = SequenceClock(0.0, 0.0, 1.0)
+
+    with pytest.raises(ExportTimeoutError, match="等待 1 秒后超时"):
+        wait_until_stable(
+            path,
+            timeout=1,
+            interval=0.1,
+            stable_checks=1,
+            clock=clock,
+            sleeper=lambda _interval: None,
+        )
+
+
+def test_non_retryable_oserror_raises_export_file_error(tmp_path, monkeypatch):
+    path = tmp_path / "ledger.xlsx"
+    original_stat = Path.stat
+    cause = OSError(errno.ENAMETOOLONG, "name too long")
+
+    def broken_stat(self, *args, **kwargs):
+        if self == path:
+            raise cause
+        return original_stat(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "stat", broken_stat)
+
+    with pytest.raises(ExportFileError, match="导出文件") as caught:
+        wait(path, FakeTime())
+
+    assert caught.value.__cause__ is cause
 
 
 @pytest.mark.parametrize(
@@ -210,20 +331,17 @@ def test_wait_timeout_reports_last_state(tmp_path, monkeypatch, state, message):
     if state == "empty":
         path.touch()
     elif state == "locked":
-        path.write_bytes(b"ready")
-
-        def locked_open(self, *args, **kwargs):
-            if self == path:
-                raise PermissionError("locked")
-            return original_open(self, *args, **kwargs)
-
-        original_open = Path.open
-        monkeypatch.setattr(Path, "open", locked_open)
+        write_xlsx(path)
 
     fake_time = FakeTime()
 
     with pytest.raises(ExportTimeoutError) as caught:
-        wait(path, fake_time, timeout=2)
+        validator = (
+            (lambda _path: (_ for _ in ()).throw(PermissionError("locked")))
+            if state == "locked"
+            else None
+        )
+        wait(path, fake_time, timeout=2, validator=validator)
 
     text = str(caught.value)
     assert str(path) in text
@@ -233,10 +351,11 @@ def test_wait_timeout_reports_last_state(tmp_path, monkeypatch, state, message):
 
 def test_continuously_changing_file_times_out_as_still_writing(tmp_path):
     path = tmp_path / "ledger.xlsx"
-    path.write_bytes(b"a")
+    write_xlsx(path)
 
     def mutate(_sleeps):
-        path.write_bytes(path.read_bytes() + b"x")
+        with ZipFile(path, "a") as archive:
+            archive.writestr(f"change-{_sleeps}.xml", "x")
 
     fake_time = FakeTime(mutate)
 
@@ -250,7 +369,9 @@ def test_continuously_changing_file_times_out_as_still_writing(tmp_path):
         ({"timeout": 0}, "timeout"),
         ({"timeout": True}, "timeout"),
         ({"timeout": float("inf")}, "timeout"),
+        ({"timeout": "1"}, "timeout"),
         ({"interval": -1}, "interval"),
+        ({"interval": 0}, "interval"),
         ({"interval": False}, "interval"),
         ({"interval": float("nan")}, "interval"),
         ({"stable_checks": 0}, "stable_checks"),
@@ -260,5 +381,9 @@ def test_continuously_changing_file_times_out_as_still_writing(tmp_path):
 )
 def test_wait_rejects_invalid_parameters(tmp_path, kwargs, field):
     kwargs.setdefault("timeout", 1)
-    with pytest.raises((TypeError, ValueError), match=field):
+    expected = TypeError if any(
+        isinstance(value, (bool, str)) or field == "stable_checks" and value == 1.5
+        for value in kwargs.values()
+    ) else ValueError
+    with pytest.raises(expected, match=field):
         wait_until_stable(tmp_path / "ledger.xlsx", **kwargs)
