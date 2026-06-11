@@ -29,17 +29,17 @@ def _validate_positive_number(name: str, value: object) -> float:
 def _validate_xlsx(path: Path) -> None:
     try:
         with ZipFile(path) as archive:
-            names = frozenset(archive.namelist())
-    except (BadZipFile, EOFError) as exc:
+            for member in _REQUIRED_XLSX_PARTS:
+                archive.read(member)
+    except (BadZipFile, EOFError, KeyError) as exc:
         raise _IncompleteXlsxError from exc
-    if not _REQUIRED_XLSX_PARTS <= names:
-        raise _IncompleteXlsxError
 
 
 def _is_temporary_file_error(exc: OSError) -> bool:
-    return isinstance(exc, (PermissionError, BlockingIOError)) or getattr(
-        exc, "winerror", None
-    ) in (32, 33)
+    return isinstance(exc, BlockingIOError) or getattr(exc, "winerror", None) in (
+        32,
+        33,
+    )
 
 
 def _raise_file_error(target: Path, exc: OSError) -> None:

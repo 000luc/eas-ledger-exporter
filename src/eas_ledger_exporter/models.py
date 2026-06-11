@@ -35,9 +35,13 @@ class ExportJob:
     output_dir: Path
 
     def __post_init__(self) -> None:
-        if type(self.year) is not int or not 2000 <= self.year <= 2100:
+        if type(self.year) is not int:
+            raise TypeError("year 必须是整数")
+        if not 2000 <= self.year <= 2100:
             raise ValueError("year 必须是 2000-2100 的整数")
-        if type(self.month) is not int or not 1 <= self.month <= 12:
+        if type(self.month) is not int:
+            raise TypeError("month 必须是整数")
+        if not 1 <= self.month <= 12:
             raise ValueError("month 必须是 1-12 的整数")
         if not isinstance(self.output_dir, Path):
             raise TypeError("output_dir 必须是 Path")

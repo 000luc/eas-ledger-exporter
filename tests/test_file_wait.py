@@ -4,6 +4,7 @@ from dataclasses import FrozenInstanceError
 import errno
 import os
 from pathlib import Path
+import struct
 from zipfile import BadZipFile, ZipFile
 
 import pytest
@@ -58,6 +59,24 @@ def write_xlsx(path, *, workbook=True, content_types=True):
             archive.writestr("xl/workbook.xml", "<workbook/>")
 
 
+def corrupt_zip_member(path, member):
+    with ZipFile(path) as archive:
+        info = archive.getinfo(member)
+    data = bytearray(path.read_bytes())
+    filename_length, extra_length = struct.unpack_from(
+        "<HH", data, info.header_offset + 26
+    )
+    data_offset = info.header_offset + 30 + filename_length + extra_length
+    data[data_offset] ^= 0xFF
+    path.write_bytes(data)
+
+
+def windows_error(error_type, winerror):
+    error = error_type("locked")
+    error.winerror = winerror
+    return error
+
+
 def test_export_job_builds_six_digit_period_and_path(tmp_path):
     job = ExportJob(Company("001", "广州总部"), 2026, 6, tmp_path)
 
@@ -67,22 +86,39 @@ def test_export_job_builds_six_digit_period_and_path(tmp_path):
         job.month = 7
 
 
-@pytest.mark.parametrize("year", (1999, 2101, True, 2026.0))
-def test_export_job_rejects_invalid_year(tmp_path, year):
-    with pytest.raises((TypeError, ValueError), match="year"):
+@pytest.mark.parametrize("year", (True, 2026.0, "2026"))
+def test_export_job_rejects_non_integer_year(tmp_path, year):
+    with pytest.raises(TypeError, match="year"):
         ExportJob(Company("001", "广州总部"), year, 6, tmp_path)
 
 
-@pytest.mark.parametrize("month", (0, 13, True, 6.0))
-def test_export_job_rejects_invalid_month(tmp_path, month):
-    with pytest.raises((TypeError, ValueError), match="month"):
+@pytest.mark.parametrize("year", (1999, 2101))
+def test_export_job_rejects_out_of_range_year(tmp_path, year):
+    with pytest.raises(ValueError, match="year"):
+        ExportJob(Company("001", "广州总部"), year, 6, tmp_path)
+
+
+@pytest.mark.parametrize("month", (True, 6.0, "6"))
+def test_export_job_rejects_non_integer_month(tmp_path, month):
+    with pytest.raises(TypeError, match="month"):
         ExportJob(Company("001", "广州总部"), 2026, month, tmp_path)
 
 
-@pytest.mark.parametrize("output_dir", ("output", None, Path()))
-def test_export_job_rejects_invalid_output_dir(output_dir):
-    with pytest.raises((TypeError, ValueError), match="output_dir"):
+@pytest.mark.parametrize("month", (0, 13))
+def test_export_job_rejects_out_of_range_month(tmp_path, month):
+    with pytest.raises(ValueError, match="month"):
+        ExportJob(Company("001", "广州总部"), 2026, month, tmp_path)
+
+
+@pytest.mark.parametrize("output_dir", ("output", None))
+def test_export_job_rejects_non_path_output_dir(output_dir):
+    with pytest.raises(TypeError, match="output_dir"):
         ExportJob(Company("001", "广州总部"), 2026, 6, output_dir)
+
+
+def test_export_job_rejects_empty_output_dir():
+    with pytest.raises(ValueError, match="output_dir"):
+        ExportJob(Company("001", "广州总部"), 2026, 6, Path())
 
 
 @pytest.mark.parametrize("code", ("01", "0001", "１２３", "12a", ""))
@@ -162,13 +198,12 @@ def test_disappearance_resets_baseline_and_stability_count(tmp_path):
 @pytest.mark.parametrize(
     "open_error",
     (
-        PermissionError,
-        lambda message: OSError(13, message, None, 32),
+        lambda: windows_error(PermissionError, 32),
+        lambda: windows_error(OSError, 33),
+        lambda: BlockingIOError("busy"),
     ),
 )
-def test_locked_file_recovers_and_each_open_is_closed(
-    tmp_path, monkeypatch, open_error
-):
+def test_locked_file_recovers_after_temporary_error(tmp_path, open_error):
     path = tmp_path / "ledger.xlsx"
     write_xlsx(path)
     attempts = 0
@@ -178,16 +213,26 @@ def test_locked_file_recovers_and_each_open_is_closed(
         assert candidate == path
         attempts += 1
         if attempts == 1:
-            raise open_error("locked")
+            raise open_error()
 
     fake_time = FakeTime()
 
     assert wait(path, fake_time, stable_checks=2, validator=validator) == path
     assert attempts == 4
-    path.unlink()
 
 
-def test_read_failure_requires_a_new_baseline_before_stability(tmp_path, monkeypatch):
+def test_default_validator_closes_archive_before_return(tmp_path):
+    path = tmp_path / "ledger.xlsx"
+    renamed = tmp_path / "renamed.xlsx"
+    write_xlsx(path)
+
+    assert wait(path, FakeTime(), stable_checks=1) == path
+
+    path.rename(renamed)
+    renamed.unlink()
+
+
+def test_read_failure_requires_a_new_baseline_before_stability(tmp_path):
     path = tmp_path / "ledger.xlsx"
     write_xlsx(path)
     attempts = 0
@@ -197,7 +242,7 @@ def test_read_failure_requires_a_new_baseline_before_stability(tmp_path, monkeyp
         assert candidate == path
         attempts += 1
         if attempts == 2:
-            raise PermissionError("locked")
+            raise windows_error(PermissionError, 32)
 
     fake_time = FakeTime()
 
@@ -269,6 +314,20 @@ def test_incomplete_xlsx_zip_keeps_waiting_until_timeout(tmp_path, writer):
         wait(path, FakeTime(), timeout=2)
 
 
+@pytest.mark.parametrize(
+    "member", ("[Content_Types].xml", "xl/workbook.xml")
+)
+def test_critical_member_crc_failure_keeps_waiting_until_timeout(
+    tmp_path, member
+):
+    path = tmp_path / "ledger.xlsx"
+    write_xlsx(path)
+    corrupt_zip_member(path, member)
+
+    with pytest.raises(ExportTimeoutError, match="仍在写入/ZIP未完成"):
+        wait(path, FakeTime(), timeout=2)
+
+
 def test_same_size_mtime_change_resets_stability(tmp_path):
     path = tmp_path / "ledger.xlsx"
     write_xlsx(path)
@@ -319,6 +378,29 @@ def test_non_retryable_oserror_raises_export_file_error(tmp_path, monkeypatch):
 
 
 @pytest.mark.parametrize(
+    "cause",
+    (
+        PermissionError("access denied"),
+        windows_error(PermissionError, 5),
+    ),
+)
+def test_non_retryable_permission_error_raises_export_file_error(
+    tmp_path, cause
+):
+    path = tmp_path / "ledger.xlsx"
+    write_xlsx(path)
+
+    with pytest.raises(ExportFileError, match="导出文件") as caught:
+        wait(
+            path,
+            FakeTime(),
+            validator=lambda _path: (_ for _ in ()).throw(cause),
+        )
+
+    assert caught.value.__cause__ is cause
+
+
+@pytest.mark.parametrize(
     ("state", "message"),
     (
         ("missing", "不存在"),
@@ -337,7 +419,11 @@ def test_wait_timeout_reports_last_state(tmp_path, monkeypatch, state, message):
 
     with pytest.raises(ExportTimeoutError) as caught:
         validator = (
-            (lambda _path: (_ for _ in ()).throw(PermissionError("locked")))
+            (
+                lambda _path: (_ for _ in ()).throw(
+                    windows_error(PermissionError, 32)
+                )
+            )
             if state == "locked"
             else None
         )
