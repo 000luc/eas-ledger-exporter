@@ -169,9 +169,32 @@ def test_locked_file_recovers_and_each_open_is_closed(
     fake_time = FakeTime()
 
     assert wait(path, fake_time, stable_checks=2) == path
-    assert attempts == 3
+    assert attempts == 4
     assert opened and all(item.closed for item in opened)
     path.unlink()
+
+
+def test_read_failure_requires_a_new_baseline_before_stability(tmp_path, monkeypatch):
+    path = tmp_path / "ledger.xlsx"
+    path.write_bytes(b"0123456789")
+    real_open = Path.open
+    attempts = 0
+
+    def fail_second_open(self, *args, **kwargs):
+        nonlocal attempts
+        if self != path:
+            return real_open(self, *args, **kwargs)
+        attempts += 1
+        if attempts == 2:
+            raise PermissionError("locked")
+        return real_open(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", fail_second_open)
+    fake_time = FakeTime()
+
+    assert wait(path, fake_time, stable_checks=2) == path
+    assert attempts == 5
+    assert fake_time.sleeps == 4
 
 
 @pytest.mark.parametrize(
@@ -204,7 +227,7 @@ def test_wait_timeout_reports_last_state(tmp_path, monkeypatch, state, message):
 
     text = str(caught.value)
     assert str(path) in text
-    assert "2" in text
+    assert "等待 2 秒后超时" in text
     assert message in text
 
 

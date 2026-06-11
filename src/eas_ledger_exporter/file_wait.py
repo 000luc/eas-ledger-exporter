@@ -50,6 +50,7 @@ def wait_until_stable(
             stable_count = 0
             last_state = "不存在"
         except OSError:
+            previous_size = None
             stable_count = 0
             last_state = "文件被占用或无法读取"
         else:
@@ -62,7 +63,7 @@ def wait_until_stable(
                     with target.open("rb"):
                         pass
                 except OSError:
-                    previous_size = size
+                    previous_size = None
                     stable_count = 0
                     last_state = "文件被占用或无法读取"
                 else:
@@ -78,6 +79,6 @@ def wait_until_stable(
         now = clock()
         if now >= deadline:
             raise ExportTimeoutError(
-                f"等待导出文件超时：{target}；timeout={timeout}；最后状态：{last_state}"
+                f"等待 {timeout_value:g} 秒后超时：{target}；最后状态：{last_state}"
             )
         sleeper(min(interval_value, max(0.0, deadline - now)))
