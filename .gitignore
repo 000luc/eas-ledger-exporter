@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 .pytest_cache/
+.coverage
 jab_wrapper.log
 artifacts/*
 !artifacts/eas-controls.txt
