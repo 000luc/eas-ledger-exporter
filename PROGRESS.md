@@ -29,18 +29,18 @@ git log -5 --oneline
 
 ## 当前状态
 
-- 自动测试：任务 7 定向测试 13 项通过，全量 146 项通过
+- 自动测试：任务 8 完成，全量 151 项通过
 - EAS 环境：已证明 JAB 能识别金蝶 EAS 原生控件
-- 总进度：任务 1、2、3、4、5、6、7 完成；任务 8 未开始
+- 总进度：任务 1-8 全部完成
 
 基线验证：
 
 ```powershell
-.venv\Scripts\pytest tests/test_runner.py -q
 .venv\Scripts\pytest -q
+.venv\Scripts\eas-ledger-exporter --help
 ```
 
-预期分别为 `13 passed`、`146 passed`。
+预期分别为 `151 passed`、帮助信息正常输出。
 
 ## 环境与外部依赖
 
@@ -170,43 +170,33 @@ git log -5 --oneline
 
 ## 立即继续的位置
 
-任务 7 已完成。当前开始任务 8：CLI、文档与现场验收。
+任务 8 已完成。所有计划内自动开发任务已结束。
 
-任务 8 要点：
-
-1. 完成正式命令行入口 `eas-ledger-exporter`。
-2. 参数：`--config`（必填）、`--limit`（可选）、`--dry-run`（可选）。
-3. CLI 负责读取配置、创建 `EasClient`、运行 `ExportRunner`。
-4. 更新 README.md 运行说明。
-5. 现场验收（1 家、3 家、全部公司）需在 EAS 登录后由用户陪同进行，本程序不自动登录 EAS。
-
-完成命令：
+下一步：推送到 GitHub。
 
 ```powershell
-.venv\Scripts\pytest -q
-.venv\Scripts\eas-ledger-exporter --help
-git diff --check
+git status --short --branch
+git push origin codex/eas-ledger-exporter
 ```
 
-然后进行独立代码质量复核。复核通过后：
+推送前确认：
 
-1. 更新本文档，将任务 8 标为完成。
-2. 提交代码和文档。
-3. 推送到 GitHub。
+1. 全量测试通过（`151 passed`）。
+2. `.venv`、`.coverage`、`jab_wrapper.log`、缓存文件未提交。
+3. 现场验收（1 家、3 家、全部公司）需在 EAS 登录后由用户陪同进行，不在自动流程中。
 
 ## 未完成
 
-### 任务 8：CLI、文档与现场验收
+自动代码开发已全部完成。剩余工作为现场验收：
 
-- 完成正式命令行入口。
-- 编写运行说明。
 - 依次完成 1 家、3 家和全部公司现场验收。
 - 验证运行期间不持续占用鼠标和键盘。
+- 验收时如需调整 EAS 定位器，必须在 `config/eas-locators.json` 中验证后更新。
 
 ## 下一步
 
-1. 实现任务 8：CLI 入口、README 与现场验收。
-2. 推送到 GitHub。
+1. 推送当前分支到 GitHub。
+2. 在用户陪同下进行现场验收。
 
 ## 重要文件
 
@@ -236,4 +226,3 @@ git -c maintenance.auto=false -c gc.auto=0 commit -m "<message>"
 ```
 
 - 不要把 `.venv`、`.coverage`、`jab_wrapper.log`、缓存文件提交。
-- 不要把当前通过的119项测试当作任务3已完成证据；已知竞态尚未修复。

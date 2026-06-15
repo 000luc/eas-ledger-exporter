@@ -78,7 +78,7 @@ def test_cli_imports_and_help_runs(capsys):
         cli.main(["--help"])
 
     assert exc_info.value.code == 0
-    assert "尚未实现" in capsys.readouterr().out
+    assert "Java Access Bridge" in capsys.readouterr().out
 
 
 def test_atomic_publish_failure_preserves_existing_artifact(tmp_path, monkeypatch):
