@@ -29,18 +29,18 @@ git log -5 --oneline
 
 ## 当前状态
 
-- 自动测试：任务 6 定向测试 8 项通过，全量 141 项通过
+- 自动测试：任务 7 定向测试 13 项通过，全量 146 项通过
 - EAS 环境：已证明 JAB 能识别金蝶 EAS 原生控件
-- 总进度：任务 1、2、3、4、5、6 完成；任务 7-8 未开始
+- 总进度：任务 1、2、3、4、5、6、7 完成；任务 8 未开始
 
 基线验证：
 
 ```powershell
-.venv\Scripts\pytest tests/test_eas_client.py -q
+.venv\Scripts\pytest tests/test_runner.py -q
 .venv\Scripts\pytest -q
 ```
 
-预期分别为 `8 passed`、`141 passed`。
+预期分别为 `13 passed`、`146 passed`。
 
 ## 环境与外部依赖
 
@@ -157,38 +157,44 @@ git log -5 --oneline
 - 未经验证的定位器在 `config/eas-locators.json` 中标记为 `pending_locator_keys`，未伪造具体 locator 字符串。
 - 新增 `EasControlError` 用于控件缺失或状态异常。
 
+### 任务 7：总流程串联、失败停止与日志
+
+已完成：
+
+- 实现 `ExportRunner`，串联配置读取、EAS 查询、导出、文件等待、XLSX 修复、内容校验。
+- 任一步失败立即停止，保存失败截图和 CSV 汇总。
+- 实现 `RunReporter`，生成文本运行日志目录、CSV 汇总和截图路径。
+- CSV 汇总字段：公司编号、公司名称、期间、状态、数据行数、文件、错误。
+- 校验“EAS 查询空数据状态”与“导出文件空数据状态”是否一致。
+- `ExportRunner` 依赖 `EasPort` 接口，便于单元测试注入 fake EAS。
+
 ## 立即继续的位置
 
-任务 6 已完成。当前开始任务 7：总流程串联、失败停止与日志。
+任务 7 已完成。当前开始任务 8：CLI、文档与现场验收。
 
-任务 7 要点：
+任务 8 要点：
 
-1. 串联配置读取、EAS 查询、导出、文件等待、XLSX 修复、内容校验。
-2. 任一步失败立即停止，保留现场和截图。
-3. 生成文本运行日志和 CSV 汇总。
-4. `ExportRunner` 依赖 `EasPort` 接口，便于单元测试。
+1. 完成正式命令行入口 `eas-ledger-exporter`。
+2. 参数：`--config`（必填）、`--limit`（可选）、`--dry-run`（可选）。
+3. CLI 负责读取配置、创建 `EasClient`、运行 `ExportRunner`。
+4. 更新 README.md 运行说明。
+5. 现场验收（1 家、3 家、全部公司）需在 EAS 登录后由用户陪同进行，本程序不自动登录 EAS。
 
 完成命令：
 
 ```powershell
-.venv\Scripts\pytest tests/test_runner.py -q
 .venv\Scripts\pytest -q
+.venv\Scripts\eas-ledger-exporter --help
 git diff --check
 ```
 
 然后进行独立代码质量复核。复核通过后：
 
-1. 更新本文档，将任务 7 标为完成。
+1. 更新本文档，将任务 8 标为完成。
 2. 提交代码和文档。
-3. 开始任务 8。
+3. 推送到 GitHub。
 
 ## 未完成
-
-### 任务 7：总流程、失败停止与日志
-
-- 串联配置、EAS 查询、导出、等待、修复和校验。
-- 任一步失败立即停止。
-- 保存文本日志、CSV 汇总和失败截图。
 
 ### 任务 8：CLI、文档与现场验收
 
@@ -199,8 +205,8 @@ git diff --check
 
 ## 下一步
 
-1. 实现任务 7：串联运行、失败停止与日志（runner.py, reporting.py）。
-2. 实现任务 8：CLI 入口、README 与现场验收。
+1. 实现任务 8：CLI 入口、README 与现场验收。
+2. 推送到 GitHub。
 
 ## 重要文件
 
@@ -208,10 +214,15 @@ git diff --check
 - 实施计划：`docs/superpowers/plans/2026-06-08-eas-ledger-exporter.md`
 - 控件树：`artifacts/eas-controls.txt`
 - 定位器：`config/eas-locators.json`
+- CLI 入口：`src/eas_ledger_exporter/cli.py`
 - 配置读取：`src/eas_ledger_exporter/config.py`
+- EAS 客户端：`src/eas_ledger_exporter/eas_client.py`
+- 流程串联：`src/eas_ledger_exporter/runner.py`
+- 日志汇总：`src/eas_ledger_exporter/reporting.py`
 - 文件任务模型：`src/eas_ledger_exporter/models.py`
 - 文件稳定等待：`src/eas_ledger_exporter/file_wait.py`
-- 当前任务测试：`tests/test_file_wait.py`
+- XLSX 修复：`src/eas_ledger_exporter/xlsx_repair.py`
+- 内容校验：`src/eas_ledger_exporter/validation.py`
 
 ## 执行纪律
 

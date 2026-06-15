@@ -20,3 +20,7 @@ class EasControlError(Exception):
 
 class ValidationError(Exception):
     """导出文件内容校验失败时抛出。"""
+
+
+class ExportError(Exception):
+    """公司导出流程失败时抛出。"""
