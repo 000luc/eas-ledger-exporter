@@ -14,5 +14,9 @@ class WorkbookRepairError(Exception):
     """无法修复 EAS 导出工作簿时抛出。"""
 
 
+class EasControlError(Exception):
+    """EAS 控件无法定位或状态不正确时抛出。"""
+
+
 class ValidationError(Exception):
     """导出文件内容校验失败时抛出。"""

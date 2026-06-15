@@ -20,6 +20,12 @@ class ExportConfig:
     companies: tuple[Company, ...]
 
 
+@dataclass(frozen=True)
+class QueryResult:
+    company_display: str
+    empty: bool
+
+
 _WINDOWS_INVALID_CHARS = frozenset('<>:"/\\|?*')
 _WINDOWS_RESERVED_NAME = re.compile(
     r"^(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)",

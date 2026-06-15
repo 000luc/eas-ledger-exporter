@@ -40,5 +40,25 @@
     "条件查询",
     "导出"
   ],
-  "pending_reason": "The application-category list uses managesDescendents and does not expose the 财务会计 category label. Native 常用应用 controls 凭证查询 and 标准凭证引出 are verified through JAB. 条件查询 and 导出 are not visible in the current tree."
+  "pending_locator_keys": [
+    "company",
+    "period_mode",
+    "start_year",
+    "start_month",
+    "end_year",
+    "end_month",
+    "max_results",
+    "audit_all",
+    "posted_all",
+    "review_all",
+    "voucher_mode",
+    "confirm",
+    "result_table",
+    "result_rows",
+    "export_excel",
+    "export_path",
+    "export_confirm",
+    "condition_query"
+  ],
+  "pending_reason": "The application-category list uses managesDescendents and does not expose the 财务会计 category label. Native 常用应用 controls 凭证查询 and 标准凭证引出 are verified through JAB. 条件查询 and 导出 are not visible in the current tree. Additional locator keys for the voucher query form and export wizard are implemented in eas_client.py but still need to be verified against the live EAS control tree."
 }
