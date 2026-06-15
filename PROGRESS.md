@@ -30,8 +30,9 @@ git log -5 --oneline
 ## 当前状态
 
 - 自动测试：任务 8 完成，全量 151 项通过
-- EAS 环境：已证明 JAB 能识别金蝶 EAS 原生控件
-- 总进度：任务 1-8 全部完成
+- EAS 环境：已证明 JAB 能识别金蝶 EAS 原生控件；EAS 当前已登录并运行在 64 位 Java（javaw PID 48748）
+- 总进度：任务 1-8 代码开发全部完成；现场验收已启动但卡在“打开凭证查询窗口”这一步
+- 阻塞点：`config/eas-locators.json` 中 `pending_locator_keys` 的定位器需要在真实查询窗口中验证，但多次尝试未能打开该窗口
 
 基线验证：
 
@@ -170,33 +171,55 @@ git log -5 --oneline
 
 ## 立即继续的位置
 
-任务 8 已完成。所有计划内自动开发任务已结束。
+现场验收已启动，当前阻塞在“如何可靠打开凭证查询窗口”。在继续 `--limit 1` 测试前，必须先让 EAS 打开查询窗口并验证/修正 `config/eas-locators.json` 中的 `pending_locator_keys`。
 
-下一步：推送到 GitHub。
+已尝试但未成功的方法（记录供接手 agent 参考，避免重复踩坑）：
+
+1. JAB `click_element` 单点、双击 `role:label and name:凭证查询`（应用中心图标）。
+2. 用 `RPA.Desktop` 在图标屏幕坐标处点击。
+3. 通过 `SendMessage` 向 EAS 窗口句柄发送 `WM_LBUTTONDOWN/UP`。
+4. 临时把 EAS 提到前台后再用 JAB 点击（此做法会抢占用户前台，不应再使用）。
+
+可能原因：
+
+- 应用中心“凭证查询”标签本身不是可点击元素，真实可点击对象可能是父面板或其他未暴露控件。
+- EAS 可能要求通过左侧菜单树（`财务会计` → ... → `凭证查询`）或顶部菜单搜索框进入，而不是点击应用中心图标。
+- 左侧菜单树使用了 `managesDescendents`，列表项 `name` 为空，需要新的定位策略。
+
+建议接手 agent 先做的几步：
+
+1. 与用户确认 EAS 当前是否已登录，并确认可以短暂切到 EAS 窗口（手动或用更安全的方式）。
+2. 在 EAS 应用中心，**手动点击“凭证查询”**，确认能打开查询窗口后，立即运行 `scripts/inspect_eas.py` 抓取完整控件树。
+3. 对比 `config/eas-locators.json` 的 `pending_locator_keys`，用真实控件树修正每个定位器；只把实际验证过的控件移入 `verified_controls`。
+4. 修正 `src/eas_ledger_exporter/eas_client.py` 中与实际控件不匹配的操作顺序（如下拉框、按钮名称等）。
+5. 再跑 `.venv\Scripts\eas-ledger-exporter --config D:\内部交易rpa\info.xlsx --limit 1` 做 1 家公司验收。
+
+完成命令：
 
 ```powershell
-git status --short --branch
-git push origin codex/eas-ledger-exporter
+.venv\Scripts\pytest -q
+.venv\Scripts\eas-ledger-exporter --config D:\内部交易rpa\info.xlsx --limit 1
 ```
 
-推送前确认：
-
-1. 全量测试通过（`151 passed`）。
-2. `.venv`、`.coverage`、`jab_wrapper.log`、缓存文件未提交。
-3. 现场验收（1 家、3 家、全部公司）需在 EAS 登录后由用户陪同进行，不在自动流程中。
+验收顺序仍为：1 家 → 3 家 → 全部。每家/每批成功后更新本文档并提交。
 
 ## 未完成
 
-自动代码开发已全部完成。剩余工作为现场验收：
+自动代码开发已全部完成。现场验收剩余工作：
 
+- 解决“凭证查询”窗口的可靠打开方式。
+- 验证并修正 `config/eas-locators.json` 中的 `pending_locator_keys`（公司、期间、状态、查询按钮、结果表、导出向导等）。
 - 依次完成 1 家、3 家和全部公司现场验收。
 - 验证运行期间不持续占用鼠标和键盘。
 - 验收时如需调整 EAS 定位器，必须在 `config/eas-locators.json` 中验证后更新。
 
 ## 下一步
 
-1. 推送当前分支到 GitHub。
-2. 在用户陪同下进行现场验收。
+1. 由接手 agent 在确认用户可配合的前提下，先打开 EAS“凭证查询”窗口并抓取控件树。
+2. 修正 `config/eas-locators.json` 和 `src/eas_ledger_exporter/eas_client.py`。
+3. 运行 `--limit 1` 验证首家导出。
+4. 继续 `--limit 3` 和全部公司验收。
+5. 验收完成后推送当前分支到 GitHub。
 
 ## 重要文件
 
