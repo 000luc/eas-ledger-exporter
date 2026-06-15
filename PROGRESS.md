@@ -1,18 +1,87 @@
-# 项目进度
+# 项目进度与接手说明
 
 更新日期：2026-06-15
+
+本文档供没有历史对话的 agent 直接接手。执行前先读本文档，再读设计和实施计划。
 
 ## 项目目标
 
 读取 `D:\内部交易rpa\info.xlsx`，通过 Java Access Bridge 操作金蝶 EAS，批量导出、修复并校验凭证序时簿。任一公司失败后立即停止并保留现场。
 
+## 仓库与工作目录
+
+- 项目根目录：`D:\BaiduSyncdisk\claude\eas-ledger-exporter`
+- 这是独立 Git 仓库，`.git` 位于项目根目录。
+- 不要在上级目录 `D:\BaiduSyncdisk\claude` 执行本项目 Git 命令。
+- 分支：`codex/eas-ledger-exporter`
+- 本文档扩充前的基线提交：`76714b3`。实际最新提交以 `git log -1 --oneline` 为准。
+- 远端分支：`origin/codex/eas-ledger-exporter`
+- 本地与远端差异以 `git status --short --branch` 为准；本文档提交前本地领先 1 个提交。
+- `README.md`、`CLAUDE.md` 当前是未跟踪文件，来源不明。未确认前不要删除、覆盖或提交。
+
+检查命令：
+
+```powershell
+cd D:\BaiduSyncdisk\claude\eas-ledger-exporter
+git status --short --branch
+git log -5 --oneline
+```
+
 ## 当前状态
 
-- 分支：`codex/eas-ledger-exporter`
-- 当前提交：`42e079f`
 - 自动测试：任务 3 定向测试 70 项通过，全量 119 项通过
 - EAS 环境：已证明 JAB 能识别金蝶 EAS 原生控件
 - 总进度：任务 1、2 完成；任务 3 接近完成；任务 4-8 未开始
+- 当前唯一已知代码问题：任务 3 的稳定指纹存在校验期间竞态，详见“立即继续的位置”。
+
+基线验证：
+
+```powershell
+.venv\Scripts\pytest tests\test_file_wait.py -q
+.venv\Scripts\pytest -q
+```
+
+预期分别为 `70 passed`、`119 passed`。
+
+## 环境与外部依赖
+
+- 操作系统：Windows，PowerShell。
+- Python：必须使用项目 `.venv` 中的 Python 3.11。
+- 依赖：`openpyxl==3.1.5`、`rpaframework==32.0.0`。
+- 配置文件：`D:\内部交易rpa\info.xlsx`。
+- 历史导出样本：`D:\内部交易rpa\序时账`。
+- EAS安装目录：`D:\Kingdee\eas`。
+- EAS客户端Java：`D:\Kingdee\eas\clientjdk\bin\javaw.exe`，32位 Java 6。
+- JAB DLL：`D:\Kingdee\eas\oracle_jdk1.8\jre\bin\WindowsAccessBridge-64.dll`。
+- JAB启用命令：
+
+```powershell
+& 'D:\Kingdee\eas\oracle_jdk1.8\bin\jabswitch.exe' -enable
+```
+
+虽然EAS是32位Java 6，现有64位Python/JAB DLL已在本机真实连接成功，不要仅根据位数推断不可用。
+
+### EAS启动注意
+
+`D:\Kingdee\eas\client\bin\client.bat` 是官方入口，但从自动化Shell直接调用时，旧批处理的相对 `set-client-env.bat` 曾未生效，导致环境变量为空。不要盲目重复启动。
+
+已验证可用的方法是读取 `set-client-env.bat` 中的参数，直接启动：
+
+- 更新服务器：`172.18.0.148:8080`
+- EAS服务器：`tcp://172.18.0.148:11033`
+- 主类：`com.kingdee.eas.tools.bodyguard.BodyguardDlg`
+
+一般情况下不要自动关闭或重启EAS。需要重启前先确认用户没有未保存操作。EAS登录必须由用户完成。
+
+## 核心技术决策
+
+- 只使用 Java Access Bridge 定位和操作EAS控件。
+- 禁止以固定屏幕坐标或图像识别作为主流程。
+- 旧Java 6会返回损坏的版本/快捷键字符串，`scripts/inspect_eas.py` 已做局部兼容和清理。
+- “财务会计”分类标签本身没有稳定暴露名称；目前以EAS原生“凭证查询”“标准凭证引出”证明内部控件可访问。
+- 未实际看到的控件不能伪造定位器，必须在 `config/eas-locators.json` 标为 pending。
+- 每项任务按 TDD 实施，之后必须依次做规格符合性复核、代码质量复核；复核问题未关闭不能进入下一任务。
+- 不读取或修改 `D:\内部交易rpa\info.xlsx` 和历史序时账样本，除非是只读测试。
 
 ## 已完成
 
@@ -55,6 +124,50 @@
 - 修复方式：校验后再次读取 `stat()`，确认大小和修改时间未变化，再累计稳定次数。
 - 修复后需重新运行任务 3 测试、全量测试和代码质量复核。
 
+相关提交：
+
+- `af1bb04`：初版文件命名与等待。
+- `47fbe74`：读取失败后重置稳定状态。
+- `475b126`：验证完整XLSX。
+- `42e079f`：实际读取关键ZIP成员并细分文件错误。
+
+## 立即继续的位置
+
+当前必须先完成任务 3，不能直接开始任务 4。
+
+问题位于 `src/eas_ledger_exporter/file_wait.py`：
+
+1. 当前代码先读取 `stat`，再执行 XLSX 校验。
+2. 如果校验期间文件被继续写入，校验可能成功，但累计的是校验前的旧指纹。
+3. 下一轮可能把文件误判为已稳定。
+
+修复要求：
+
+1. 先写失败测试：validator在校验期间修改文件，但不破坏XLSX。
+2. 校验完成后再次执行 `target.stat()`。
+3. 比较校验前后的 `(st_size, st_mtime_ns)`。
+4. 若不同，重置稳定计数，状态保持“仍在写入”，进入下一轮。
+5. 校验后第二次 `stat()` 的错误必须沿用现有分类：
+   - 文件消失：重置为“不存在”；
+   - `winerror` 32/33或 `BlockingIOError`：临时占用；
+   - 其他 `OSError`：立即抛 `ExportFileError` 并保留异常链。
+6. 只有校验前后指纹一致，才可累计稳定次数。
+7. 返回前仍需检查 deadline。
+
+完成命令：
+
+```powershell
+.venv\Scripts\pytest tests\test_file_wait.py -q
+.venv\Scripts\pytest -q
+git diff --check
+```
+
+然后进行独立代码质量复核。复核通过后：
+
+1. 更新本文档，将任务 3 标为完成。
+2. 提交代码和文档。
+3. 开始任务 4。
+
 ## 未完成
 
 ### 任务 4：XLSX 工作表范围修复
@@ -62,12 +175,15 @@
 - 修正 EAS 导出文件错误的 `dimension ref="A1"`。
 - 根据实际最后单元格写为 `A1:AB行号`。
 - 使用临时文件和原子替换，保留工作簿其他内容。
+- 真实样本最大约17MB，解压后的 `sheet1.xml` 可达约302MB，不能用高内存的整表解析方案。
+- 任务细节以实施计划中的 Task 4 为准。
 
 ### 任务 5：导出内容校验
 
 - 校验 28 列表头。
 - 校验公司、期间、文件名和数据行。
 - 区分正常数据和经 EAS 确认的空数据。
+- 注意EAS原始文件曾因错误 `dimension ref="A1"` 导致openpyxl只能看到一个单元格，必须先完成任务4。
 
 ### 任务 6：EAS 自动化
 
@@ -77,6 +193,7 @@
 - 右键执行“导出到 Excel”。
 - 处理导出向导和下一家公司切换。
 - 当前“条件查询”“导出”定位器仍需在对应窗口现场探测。
+- 现场探测需要EAS已登录并进入相应窗口；不要根据截图猜定位器。
 
 ### 任务 7：总流程、失败停止与日志
 
@@ -103,3 +220,21 @@
 - 实施计划：`docs/superpowers/plans/2026-06-08-eas-ledger-exporter.md`
 - 控件树：`artifacts/eas-controls.txt`
 - 定位器：`config/eas-locators.json`
+- 配置读取：`src/eas_ledger_exporter/config.py`
+- 文件任务模型：`src/eas_ledger_exporter/models.py`
+- 文件稳定等待：`src/eas_ledger_exporter/file_wait.py`
+- 当前任务测试：`tests/test_file_wait.py`
+
+## 执行纪律
+
+- 先检查工作区，保留用户未提交文件。
+- 手工编辑使用 `apply_patch`。
+- 出错后不要盲目重复；先查具体报错，技术问题优先查官方文档或GitHub。
+- 每个实现任务单独提交，提交时避免根仓库曾出现的自动GC卡顿：
+
+```powershell
+git -c maintenance.auto=false -c gc.auto=0 commit -m "<message>"
+```
+
+- 不要把 `.venv`、`.coverage`、`jab_wrapper.log`、缓存文件提交。
+- 不要把当前通过的119项测试当作任务3已完成证据；已知竞态尚未修复。
