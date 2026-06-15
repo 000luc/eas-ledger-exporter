@@ -8,3 +8,7 @@ class ExportTimeoutError(TimeoutError):
 
 class ExportFileError(OSError):
     """导出文件无法继续检查或读取时抛出。"""
+
+
+class WorkbookRepairError(Exception):
+    """无法修复 EAS 导出工作簿时抛出。"""

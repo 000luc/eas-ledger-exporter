@@ -29,18 +29,18 @@ git log -5 --oneline
 
 ## 当前状态
 
-- 自动测试：任务 3 定向测试 71 项通过，全量 120 项通过
+- 自动测试：任务 4 定向测试 5 项通过，全量 125 项通过
 - EAS 环境：已证明 JAB 能识别金蝶 EAS 原生控件
-- 总进度：任务 1、2、3 完成；任务 4-8 未开始
+- 总进度：任务 1、2、3、4 完成；任务 5-8 未开始
 
 基线验证：
 
 ```powershell
-.venv\Scripts\pytest tests\test_file_wait.py -q
+.venv\Scripts\pytest tests/test_xlsx_repair.py -q
 .venv\Scripts\pytest -q
 ```
 
-预期分别为 `71 passed`、`120 passed`。
+预期分别为 `5 passed`、`125 passed`。
 
 ## 环境与外部依赖
 
@@ -124,41 +124,44 @@ git log -5 --oneline
 - `47fbe74`：读取失败后重置稳定状态。
 - `475b126`：验证完整XLSX。
 - `42e079f`：实际读取关键ZIP成员并细分文件错误。
+- `d4c1da4`：使用校验后指纹判断稳定。
+
+### 任务 4：XLSX 工作表范围修复
+
+已完成：
+
+- 实现 `repair_dimension()` 修复 EAS 导出文件错误的 `dimension ref="A1"`。
+- 流式扫描 `xl/worksheets/sheet1.xml` 中 `<c r="..."/>` 坐标，定位实际最后单元格。
+- 将 `dimension` 更新为 `A1:列标行号`（例如 `A1:AB12345`）。
+- 使用临时目录、临时 XLSX 文件和原子替换，保留工作簿其他内容。
+- 处理缺少工作表和空工作表错误，统一抛 `WorkbookRepairError`。
 
 ## 立即继续的位置
 
-任务 3 已完成。当前开始任务 4：XLSX 工作表范围修复。
+任务 4 已完成。当前开始任务 5：导出内容校验。
 
-任务 4 要点：
+任务 5 要点：
 
-1. 修正 EAS 导出文件错误的 `dimension ref="A1"`。
-2. 根据 `xl/worksheets/sheet1.xml` 中实际最后单元格坐标写为 `A1:AB行号`。
-3. 使用临时文件和原子替换，保留工作簿其他内容。
-4. 真实样本解压后 `sheet1.xml` 可达约 302MB，必须采用流式/低内存方案，不能整表加载到内存。
+1. 校验 28 列标准表头。
+2. 校验公司、期间、文件名和数据行。
+3. 区分正常数据和经 EAS 确认的空数据。
+4. 必须先完成任务 4，否则错误的 `dimension ref="A1"` 会导致 openpyxl 只看到第一个单元格。
 
 完成命令：
 
 ```powershell
-.venv\Scripts\pytest tests/test_xlsx_repair.py -q
+.venv\Scripts\pytest tests/test_validation.py -q
 .venv\Scripts\pytest -q
 git diff --check
 ```
 
 然后进行独立代码质量复核。复核通过后：
 
-1. 更新本文档，将任务 4 标为完成。
+1. 更新本文档，将任务 5 标为完成。
 2. 提交代码和文档。
-3. 开始任务 5。
+3. 开始任务 6。
 
 ## 未完成
-
-### 任务 4：XLSX 工作表范围修复
-
-- 修正 EAS 导出文件错误的 `dimension ref="A1"`。
-- 根据实际最后单元格写为 `A1:AB行号`。
-- 使用临时文件和原子替换，保留工作簿其他内容。
-- 真实样本最大约17MB，解压后的 `sheet1.xml` 可达约302MB，不能用高内存的整表解析方案。
-- 任务细节以实施计划中的 Task 4 为准。
 
 ### 任务 5：导出内容校验
 
