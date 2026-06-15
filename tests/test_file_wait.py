@@ -449,6 +449,24 @@ def test_continuously_changing_file_times_out_as_still_writing(tmp_path):
         wait(path, fake_time, timeout=2)
 
 
+def test_mutation_during_validation_resets_stability_baseline(tmp_path):
+    path = tmp_path / "ledger.xlsx"
+    write_xlsx(path)
+    mutated = False
+
+    def validator_that_appends_once(candidate):
+        nonlocal mutated
+        if not mutated:
+            with ZipFile(candidate, "a") as archive:
+                archive.writestr("extra.xml", "extra")
+            mutated = True
+
+    fake_time = FakeTime()
+
+    assert wait(path, fake_time, stable_checks=1, validator=validator_that_appends_once) == path
+    assert fake_time.sleeps == 1
+
+
 @pytest.mark.parametrize(
     ("kwargs", "field"),
     (

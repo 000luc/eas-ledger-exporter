@@ -106,20 +106,33 @@ def wait_until_stable(
                     stable_count = 0
                     last_state = "文件被占用或无法读取"
                 else:
-                    fingerprint = (stat.st_size, stat.st_mtime_ns)
-                    if previous_fingerprint == fingerprint:
-                        stable_count += 1
-                    else:
-                        previous_fingerprint = fingerprint
+                    try:
+                        post_stat = target.stat()
+                    except FileNotFoundError:
+                        previous_fingerprint = None
                         stable_count = 0
-                    last_state = "仍在写入"
-                    if stable_count >= stable_checks:
-                        if clock() >= deadline:
-                            raise ExportTimeoutError(
-                                f"等待 {timeout_value:g} 秒后超时：{target}；"
-                                f"最后状态：{last_state}"
-                            )
-                        return target
+                        last_state = "不存在"
+                    except OSError as exc:
+                        if not _is_temporary_file_error(exc):
+                            _raise_file_error(target, exc)
+                        previous_fingerprint = None
+                        stable_count = 0
+                        last_state = "文件被占用或无法读取"
+                    else:
+                        fingerprint = (post_stat.st_size, post_stat.st_mtime_ns)
+                        if previous_fingerprint == fingerprint:
+                            stable_count += 1
+                        else:
+                            previous_fingerprint = fingerprint
+                            stable_count = 0
+                        last_state = "仍在写入"
+                        if stable_count >= stable_checks:
+                            if clock() >= deadline:
+                                raise ExportTimeoutError(
+                                    f"等待 {timeout_value:g} 秒后超时：{target}；"
+                                    f"最后状态：{last_state}"
+                                )
+                            return target
 
         now = clock()
         if now >= deadline:
